@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetLearn — Network Address Learning</title>
+  <meta name="description" content="Interactive subnet calculator, quiz, IP class identifier, and time attack challenges for networking and system administration students." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ── RESET ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --o:   #FF4E0D;   --od:  rgba(255,78,13,0.11);   --og:  rgba(255,78,13,0.38);
+      --b:   #0ea5e9;   --bd:  rgba(14,165,233,0.11);
+      --g:   #10b981;   --gd:  rgba(16,185,129,0.11);
+      --v:   #7c3aed;   --vd:  rgba(124,58,237,0.11);   --vg:  rgba(124,58,237,0.38);
+      --ok:  #22c55e;   --okd: rgba(34,197,94,0.11);
+      --er:  #ef4444;   --erd: rgba(239,68,68,0.11);
+      --bg:  #070707;   --s1:  #111;   --s2:  #181818;   --s3:  #202020;
+      --br:  #252525;   --br2: #313131;
+      --tx:  #f0f0f0;   --txm: #666;   --txd: #303030;
+      --mono:'Share Tech Mono',monospace;  --ui:'Outfit',sans-serif;
+    }
+
+    html, body { min-height:100vh; background:var(--bg); font-family:var(--ui); color:var(--tx); overflow-x:hidden; }
+
+    /* ── SCREENS ────────────────────────────────────────────────── */
+    .screen { display:none; min-height:100vh; flex-direction:column; }
+    .screen.active { display:flex; animation:fadeUp .32s ease both; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── SHARED NAV ─────────────────────────────────────────────── */
+    .anav {
+      display:flex; align-items:center; gap:14px; padding:16px 36px;
+      border-bottom:1px solid var(--br); position:sticky; top:0; z-index:20;
+      background:rgba(7,7,7,.9); backdrop-filter:blur(16px);
+    }
+    .back-btn {
+      display:flex; align-items:center; gap:7px; padding:7px 13px;
+      background:var(--s2); border:1px solid var(--br); border-radius:10px;
+      color:var(--txm); font-family:var(--ui); font-size:13px; cursor:pointer;
+      transition:all .18s;
+    }
+    .back-btn:hover { color:var(--tx); border-color:var(--br2); }
+    .nav-ttl { font-size:15px; font-weight:700; }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:10px; }
+
+    /* ── SHARED COMPONENTS ──────────────────────────────────────── */
+    .pill {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:4px 13px; border-radius:50px; font-size:11px; font-weight:700; letter-spacing:.06em;
+    }
+    .pill-o  { background:var(--od); color:var(--o); border:1px solid rgba(255,78,13,.25); }
+    .pill-b  { background:var(--bd); color:var(--b); border:1px solid rgba(14,165,233,.25); }
+    .pill-g  { background:var(--gd); color:var(--g); border:1px solid rgba(16,185,129,.25); }
+    .pill-v  { background:var(--vd); color:var(--v); border:1px solid rgba(124,58,237,.25); }
+
+    .btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      border:none; border-radius:12px; font-family:var(--ui); font-weight:700;
+      cursor:pointer; transition:all .15s; letter-spacing:.05em;
+      text-transform:uppercase; font-size:13px; padding:13px 24px;
+    }
+    .btn-w { width:100%; }
+    .btn-o  { background:var(--o); color:#fff; box-shadow:0 4px 18px var(--og); }
+    .btn-o:hover  { background:#ff6a3d; } .btn-o:active  { transform:scale(.97); }
+    .btn-b  { background:var(--b); color:#fff; box-shadow:0 4px 18px rgba(14,165,233,.35); }
+    .btn-b:hover  { background:#38bdf8; } .btn-b:active  { transform:scale(.97); }
+    .btn-g  { background:var(--g); color:#fff; box-shadow:0 4px 18px rgba(16,185,129,.35); }
+    .btn-g:hover  { background:#34d399; } .btn-g:active  { transform:scale(.97); }
+    .btn-v  { background:var(--v); color:#fff; box-shadow:0 4px 18px var(--vg); }
+    .btn-v:hover  { background:#6d28d9; } .btn-v:active  { transform:scale(.97); }
+    .btn-ghost { background:var(--s2); color:var(--txm); border:1px solid var(--br); }
+    .btn-ghost:hover { color:var(--tx); border-color:var(--br2); }
+
+    .inp {
+      background:var(--s2); border:1px solid var(--br); border-radius:12px;
+      padding:11px 15px; color:var(--tx); font-family:var(--mono); font-size:16px;
+      width:100%; outline:none; transition:border-color .2s;
+    }
+    .inp::placeholder { color:var(--txd); }
+    .inp:focus { border-color:var(--o); }
+    .inp.err { border-color:var(--er); }
+    .lbl { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--txm); margin-bottom:7px; display:block; }
+    .etxt { font-size:11px; color:var(--er); margin-top:4px; display:none; }
+    .etxt.show { display:block; }
+
+    /* ────────────────────────────────────────────────────────────
+       HOME
+    ──────────────────────────────────────────────────────────── */
+    .h-nav {
+      display:flex; align-items:center; justify-content:space-between; padding:22px 52px;
+    }
+    .h-logo { display:flex; align-items:center; gap:10px; font-size:16px; font-weight:800; letter-spacing:-.01em; }
+    .h-dot  { width:10px; height:10px; border-radius:50%; background:var(--o); box-shadow:0 0 14px var(--og); }
+    .h-nav-sub { font-size:11px; color:var(--txm); font-weight:600; letter-spacing:.07em; }
+
+    .h-hero {
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:48px 24px 80px; text-align:center; position:relative;
+    }
+    .h-hero::before {
+      content:''; position:absolute; top:-160px; left:50%; transform:translateX(-50%);
+      width:900px; height:900px;
+      background:radial-gradient(circle, rgba(255,78,13,.055) 0%, transparent 58%);
+      pointer-events:none;
+    }
+    .h-ey   { font-size:11px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--o); margin-bottom:18px; }
+    .h-ttl  { font-size:clamp(38px,5.2vw,68px); font-weight:900; letter-spacing:-.025em; line-height:1.08; margin-bottom:18px; max-width:840px; }
+    .h-ttl .acc { color:var(--o); }
+    .h-sub  { font-size:16px; color:var(--txm); max-width:450px; line-height:1.75; margin-bottom:60px; font-weight:400; }
+
+    .h-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; width:100%; max-width:1060px; text-align:left; }
+
+    .hc {
+      background:var(--s1); border:1px solid var(--br); border-radius:20px;
+      padding:28px 22px 22px; cursor:pointer; transition:all .22s; position:relative; overflow:hidden;
+    }
+    .hc::after { content:''; position:absolute; inset:0; opacity:0; transition:opacity .22s; pointer-events:none; }
+    .hc[data-m=calc]::after  { background:radial-gradient(circle at 0 0,var(--od) 0%,transparent 55%); }
+    .hc[data-m=quiz]::after  { background:radial-gradient(circle at 0 0,var(--bd) 0%,transparent 55%); }
+    .hc[data-m=class]::after { background:radial-gradient(circle at 0 0,var(--gd) 0%,transparent 55%); }
+    .hc[data-m=attack]::after{ background:radial-gradient(circle at 0 0,var(--vd) 0%,transparent 55%); }
+    .hc:hover { transform:translateY(-5px); }
+    .hc:hover::after { opacity:1; }
+    .hc[data-m=calc]:hover   { border-color:rgba(255,78,13,.38);  box-shadow:0 20px 40px rgba(255,78,13,.08); }
+    .hc[data-m=quiz]:hover   { border-color:rgba(14,165,233,.38); box-shadow:0 20px 40px rgba(14,165,233,.08); }
+    .hc[data-m=class]:hover  { border-color:rgba(16,185,129,.38); box-shadow:0 20px 40px rgba(16,185,129,.08); }
+    .hc[data-m=attack]:hover { border-color:rgba(124,58,237,.38); box-shadow:0 20px 40px rgba(124,58,237,.08); }
+
+    .hc-icon { width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; margin-bottom:18px; }
+    .hc[data-m=calc]  .hc-icon { background:var(--od); color:var(--o); }
+    .hc[data-m=quiz]  .hc-icon { background:var(--bd); color:var(--b); }
+    .hc[data-m=class] .hc-icon { background:var(--gd); color:var(--g); }
+    .hc[data-m=attack].hc-icon { background:var(--vd); color:var(--v); }
+    .hc[data-m=attack] .hc-icon { background:var(--vd); color:var(--v); }
+    .hc-icon svg { width:24px; height:24px; }
+    .hc-name { font-size:16px; font-weight:800; margin-bottom:7px; letter-spacing:-.01em; }
+    .hc[data-m=calc]  .hc-name { color:var(--o); }
+    .hc[data-m=quiz]  .hc-name { color:var(--b); }
+    .hc[data-m=class] .hc-name { color:var(--g); }
+    .hc[data-m=attack].hc-name { color:var(--v); }
+    .hc-desc { font-size:12.5px; color:var(--txm); line-height:1.57; }
+
+    /* ────────────────────────────────────────────────────────────
+       CALCULATOR
+    ──────────────────────────────────────────────────────────── */
+    .calc-wrap {
+      display:grid; grid-template-columns:320px 1fr; gap:26px;
+      padding:32px 48px; max-width:1100px; margin:0 auto; width:100%;
+    }
+    .panel { background:var(--s1); border:1px solid var(--br); border-radius:18px; padding:24px; }
+    .phd   { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--txm); margin-bottom:20px; }
+    .fg    { display:flex; flex-direction:column; margin-bottom:14px; }
+    .fg:last-of-type { margin-bottom:18px; }
+
+    .res-hi { background:var(--o); border-radius:13px; padding:16px 18px; position:relative; overflow:hidden; margin-bottom:14px; }
+    .res-hi::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 50%); }
+    .rh-lbl  { font-size:9px; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:rgba(0,0,0,.45); margin-bottom:3px; }
+    .rh-val  { font-family:var(--mono); font-size:26px; color:#fff; }
+    .rh-meta { font-family:var(--mono); font-size:12px; color:rgba(0,0,0,.4); margin-top:2px; }
+
+    .dgrid { background:var(--s2); border:1px solid var(--br); border-radius:13px; overflow:hidden; margin-bottom:14px; }
+    .dr { display:flex; align-items:center; justify-content:space-between; padding:9px 16px; border-bottom:1px solid var(--br); gap:8px; }
+    .dr:last-child { border-bottom:none; }
+    .drk { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--txm); flex-shrink:0; }
+    .drv { font-family:var(--mono); font-size:13px; color:var(--tx); text-align:right; }
+    .drv.oc  { color:var(--o); }
+    .drv.gc  { color:var(--ok); }
+    .drv.cls-v { font-size:11px; }
+
+    .bits-box { background:var(--s2); border:1px solid var(--br); border-radius:13px; padding:14px 16px; overflow-x:auto; margin-top:0; }
+    .bits-hd  { font-size:9px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--txm); margin-bottom:12px; }
+    .brow  { display:flex; align-items:flex-start; gap:8px; margin-bottom:5px; white-space:nowrap; }
+    .brow:last-child { margin-bottom:0; }
+    .blbl  { font-family:var(--mono); font-size:9px; color:var(--txm); width:50px; flex-shrink:0; padding-top:2px; }
+    .bvis  { display:flex; align-items:flex-start; gap:3px; }
+    .boct  { display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .bbits { display:flex; gap:1px; }
+    .bit   { width:12px; height:17px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:7px; }
+    .b1 { background:rgba(255,78,13,.22); color:var(--o); }
+    .b0 { background:var(--s3); color:var(--txd); }
+    .bdec  { font-family:var(--mono); font-size:8.5px; color:var(--txd); }
+    .bsep  { font-family:var(--mono); font-size:10px; color:var(--txd); padding-top:2px; }
+    .brule { border:none; border-top:1px dashed var(--br); margin:5px 0 5px 56px; }
+
+    .ph { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; text-align:center; gap:14px; }
+    .ph svg { opacity:.1; }
+    .ph p { font-size:13px; color:var(--txm); line-height:1.6; }
+
+    /* ────────────────────────────────────────────────────────────
+       QUIZ
+    ──────────────────────────────────────────────────────────── */
+    .quiz-wrap { max-width:660px; margin:0 auto; padding:32px 24px; width:100%; }
+
+    .diff-row { display:flex; gap:7px; background:var(--s1); border:1px solid var(--br); border-radius:12px; padding:5px; margin-bottom:22px; }
+    .dtab { flex:1; padding:10px; border-radius:8px; border:none; background:transparent; color:var(--txm); font-family:var(--ui); font-size:13px; font-weight:600; cursor:pointer; transition:all .18s; }
+    .dtab.on { background:var(--s2); color:var(--tx); border:1px solid var(--br); }
+
+    .qscore-row { display:flex; gap:10px; margin-bottom:20px; }
+    .qsc { flex:1; background:var(--s1); border:1px solid var(--br); border-radius:12px; padding:13px 16px; text-align:center; }
+    .qsc-v { font-size:28px; font-weight:800; line-height:1; margin-bottom:3px; }
+    .qsc-l { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--txm); }
+    .qsc.ok .qsc-v { color:var(--ok); }
+    .qsc.bad .qsc-v { color:var(--er); }
+
+    .qip-card { background:var(--s1); border:1px solid var(--br); border-radius:16px; padding:24px; text-align:center; margin-bottom:18px; }
+    .qip-ey   { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--b); margin-bottom:10px; }
+    .qip-addr { font-family:var(--mono); font-size:32px; color:var(--tx); margin-bottom:6px; letter-spacing:.02em; }
+    .qip-mask { font-family:var(--mono); font-size:14px; color:var(--txm); }
+
+    .q-panel { background:var(--s1); border:1px solid var(--br); border-radius:16px; overflow:hidden; margin-bottom:18px; }
+    .qq { padding:16px 20px; border-bottom:1px solid var(--br); }
+    .qq:last-child { border-bottom:none; }
+    .qq-lbl { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--txm); margin-bottom:10px; }
+
+    .class-btns { display:flex; gap:7px; }
+    .cbtn { flex:1; padding:10px 6px; border-radius:9px; border:1px solid var(--br); background:var(--s2); color:var(--txm); font-family:var(--ui); font-size:15px; font-weight:800; cursor:pointer; transition:all .15s; }
+    .cbtn:hover { border-color:var(--b); color:var(--b); }
+    .cbtn.sel    { background:rgba(14,165,233,.12); border-color:var(--b); color:var(--b); }
+    .cbtn.rv-ok  { background:var(--okd); border-color:var(--ok); color:var(--ok); pointer-events:none; }
+    .cbtn.rv-bad { background:var(--erd); border-color:var(--er); color:var(--er); pointer-events:none; }
+    .cbtn.rv-nt  { opacity:.3; pointer-events:none; }
+
+    .q-inp { background:var(--s2); border:1px solid var(--br); border-radius:10px; padding:10px 14px; color:var(--tx); font-family:var(--mono); font-size:15px; width:100%; outline:none; transition:border-color .2s; }
+    .q-inp::placeholder { color:var(--txd); }
+    .q-inp:focus { border-color:var(--b); }
+    .q-inp.rv-ok  { border-color:var(--ok); background:var(--okd); }
+    .q-inp.rv-bad { border-color:var(--er); background:var(--erd); }
+    .q-inp:disabled { opacity:.75; }
+    .q-hint { font-size:11px; color:var(--txm); margin-top:5px; display:none; }
+    .q-hint.show { display:block; }
+    .q-hint.ok  { color:var(--ok); }
+    .q-hint.bad { color:var(--er); }
+
+    .q-reveal { display:none; background:var(--s1); border:1px solid var(--br); border-radius:16px; padding:22px; margin-bottom:18px; animation:fadeUp .3s ease both; }
+    .q-reveal.show { display:block; }
+    .qr-hd { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--txm); margin-bottom:14px; }
+    .qr-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:14px; }
+    .qr-item { background:var(--s2); border:1px solid var(--br); border-radius:11px; padding:11px 14px; }
+    .qr-k { font-size:9px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--txm); margin-bottom:3px; }
+    .qr-v { font-family:var(--mono); font-size:14px; color:var(--tx); }
+    .qr-v.bc { color:var(--b); }
+    .wc-box { background:var(--s2); border:1px solid var(--br); border-radius:11px; padding:12px 14px; margin-bottom:14px; font-size:13px; color:var(--txm); line-height:1.65; }
+    .wc-box strong { color:var(--tx); }
+    .q-act { display:flex; gap:11px; margin-bottom:18px; }
+
+    /* ────────────────────────────────────────────────────────────
+       IP CLASS IDENTIFIER
+    ──────────────────────────────────────────────────────────── */
+    .cls-wrap { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 24px; gap:26px; text-align:center; }
+
+    .streak-area { display:flex; align-items:center; gap:18px; }
+    .streak-num  { font-size:52px; font-weight:900; color:var(--g); line-height:1; }
+    .streak-info { text-align:left; }
+    .streak-lbl  { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--txm); margin-bottom:4px; }
+    .streak-best { font-size:13px; color:var(--txm); }
+    .streak-best span { color:var(--g); font-weight:700; }
+
+    .speed-row { display:flex; align-items:center; gap:10px; font-size:11px; color:var(--txm); font-weight:600; letter-spacing:.05em; }
+    .spd-track { width:110px; height:4px; background:var(--s3); border-radius:50px; overflow:hidden; }
+    .spd-fill  { height:100%; background:var(--g); border-radius:50px; transition:width .5s ease; }
+
+    .cls-start-area { display:flex; flex-direction:column; align-items:center; gap:16px; }
+    .cls-start-area h2 { font-size:24px; font-weight:800; color:var(--g); }
+    .cls-start-area p  { font-size:14px; color:var(--txm); max-width:380px; line-height:1.65; }
+
+    .cls-game-area { display:none; flex-direction:column; align-items:center; gap:22px; }
+
+    .cls-card    { background:var(--s1); border:1px solid var(--br); border-radius:24px; padding:42px 58px; box-shadow:0 24px 60px rgba(0,0,0,.55); }
+    .cls-ey      { font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--g); margin-bottom:14px; }
+    .cls-addr    { font-family:var(--mono); font-size:50px; color:var(--tx); letter-spacing:.01em; }
+    .cls-tbar-wrap { height:3px; background:var(--s3); border-radius:50px; overflow:hidden; margin-top:18px; }
+    .cls-tbar    { height:100%; background:var(--g); border-radius:50px; }
+    @keyframes shrinkBar { from{width:100%} to{width:0%} }
+    .cls-tbar.running { animation:shrinkBar var(--dur,8s) linear forwards; }
+
+    .cls-ans-btns { display:flex; gap:11px; }
+    .cabt {
+      width:68px; height:68px; border-radius:18px; border:2px solid var(--br); background:var(--s1);
+      color:var(--txm); font-family:var(--ui); font-size:22px; font-weight:900; cursor:pointer; transition:all .15s;
+    }
+    .cabt:hover { border-color:var(--g); color:var(--g); transform:translateY(-3px); box-shadow:0 8px 22px rgba(16,185,129,.2); }
+    .cabt.ok    { background:var(--okd); border-color:var(--ok); color:var(--ok); pointer-events:none; }
+    .cabt.bad   { background:var(--erd); border-color:var(--er); color:var(--er); pointer-events:none; }
+    .cabt:disabled { opacity:.3; cursor:default; transform:none; box-shadow:none; }
+
+    .cls-fb-area { min-height:52px; display:flex; align-items:center; justify-content:center; }
+    .fb-pill { display:none; align-items:center; gap:9px; padding:11px 24px; border-radius:50px; font-size:14px; font-weight:700; animation:fadeUp .18s ease both; }
+    .fb-pill.show { display:flex; }
+    .fb-pill.ok  { background:var(--okd); color:var(--ok); border:1px solid rgba(34,197,94,.3); }
+    .fb-pill.bad { background:var(--erd); color:var(--er); border:1px solid rgba(239,68,68,.3); }
+
+    .cls-totals { font-size:13px; color:var(--txm); display:flex; gap:20px; }
+    .cls-totals strong { color:var(--tx); }
+
+    /* ────────────────────────────────────────────────────────────
+       TIME ATTACK
+    ──────────────────────────────────────────────────────────── */
+    .ta-setup { flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px; }
+    .ta-sc { background:var(--s1); border:1px solid var(--br); border-radius:22px; padding:44px; width:100%; max-width:420px; text-align:center; }
+    .ta-sc-icon { width:62px; height:62px; background:var(--vd); border-radius:18px; display:flex; align-items:center; justify-content:center; margin:0 auto 22px; color:var(--v); }
+    .ta-sc-icon svg { width:30px; height:30px; }
+    .ta-sc-ttl { font-size:22px; font-weight:800; margin-bottom:8px; }
+    .ta-sc-sub { font-size:14px; color:var(--txm); margin-bottom:28px; line-height:1.65; }
+    .ta-name-inp { background:var(--s2); border:1px solid var(--br); border-radius:12px; padding:13px 18px; color:var(--tx); font-family:var(--ui); font-size:16px; font-weight:600; width:100%; margin-bottom:14px; outline:none; transition:border-color .2s; text-align:center; }
+    .ta-name-inp::placeholder { color:var(--txm); }
+    .ta-name-inp:focus { border-color:var(--v); }
+
+    .ta-game { display:none; flex-direction:column; flex:1; }
+    .ta-game.on { display:flex; animation:fadeUp .3s ease both; }
+
+    .ta-hud { display:flex; align-items:center; gap:20px; padding:14px 40px; border-bottom:1px solid var(--br); flex-wrap:wrap; }
+    .ta-timer-wrap { display:flex; align-items:center; gap:12px; }
+    .ta-ring { position:relative; }
+    .ta-ring svg { transform:rotate(-90deg); }
+    .ta-ring .tr { fill:none; stroke-width:4.5; }
+    .ta-ring .tr-track { stroke:var(--s3); }
+    .ta-ring .tr-fill  { stroke:var(--v); stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+    .ta-ring.danger .tr-fill { stroke:var(--er); }
+    .ta-tnum { font-family:var(--mono); font-size:28px; font-weight:700; color:var(--v); min-width:42px; }
+    .ta-tnum.danger { color:var(--er); }
+    .ta-chips { display:flex; gap:22px; margin-left:auto; flex-wrap:wrap; }
+    .ta-chip .v { font-size:22px; font-weight:800; color:var(--tx); line-height:1; }
+    .ta-chip .l { font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--txm); margin-top:2px; }
+
+    .ta-main { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:36px 24px; gap:20px; }
+    .ta-qcard { background:var(--s1); border:1px solid var(--br); border-radius:20px; padding:30px 32px; width:100%; max-width:570px; text-align:center; }
+    .ta-pts-badge { display:inline-block; padding:4px 13px; border-radius:50px; font-size:11px; font-weight:700; letter-spacing:.06em; margin-bottom:14px; }
+    .ta-pts-badge.easy { background:var(--okd); color:var(--ok); border:1px solid rgba(34,197,94,.2); }
+    .ta-pts-badge.med  { background:var(--bd);  color:var(--b);  border:1px solid rgba(14,165,233,.2); }
+    .ta-pts-badge.hard { background:var(--vd);  color:var(--v);  border:1px solid rgba(124,58,237,.2); }
+    .ta-qtext { font-size:14px; color:var(--txm); font-weight:500; margin-bottom:7px; }
+    .ta-qip   { font-family:var(--mono); font-size:26px; color:var(--tx); margin-bottom:22px; }
+    .ta-opts  { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .ta-opt { padding:14px 10px; border-radius:12px; border:1px solid var(--br); background:var(--s2); color:var(--tx); font-family:var(--mono); font-size:13px; cursor:pointer; transition:all .13s; font-weight:600; word-break:break-all; }
+    .ta-opt:hover     { border-color:var(--v); color:var(--v); }
+    .ta-opt.ok        { background:var(--okd); border-color:var(--ok); color:var(--ok); pointer-events:none; }
+    .ta-opt.bad       { background:var(--erd); border-color:var(--er); color:var(--er); pointer-events:none; }
+    .ta-opt.disabled  { opacity:.35; pointer-events:none; }
+    .ta-feedback-msg  { font-size:13px; font-weight:700; height:20px; }
+    .ta-feedback-msg.ok  { color:var(--ok); }
+    .ta-feedback-msg.bad { color:var(--er); }
+
+    /* Leaderboard */
+    .ta-lb { display:none; flex-direction:column; flex:1; overflow-y:auto; }
+    .ta-lb.on { display:flex; animation:fadeUp .35s ease both; }
+    .lb-top { text-align:center; padding:48px 24px 26px; }
+    .lb-ttl { font-size:38px; font-weight:900; margin-bottom:6px; }
+    .lb-sub2 { font-size:15px; color:var(--txm); }
+    .lb-you { max-width:480px; margin:0 auto 26px; background:var(--vd); border:1px solid rgba(124,58,237,.25); border-radius:16px; padding:20px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+    .lb-you-info .lbl1 { font-size:12px; color:var(--txm); margin-bottom:4px; }
+    .lb-you-info .name { font-size:22px; font-weight:800; color:var(--v); }
+    .lb-you-right { text-align:right; }
+    .lb-you-pts  { font-size:46px; font-weight:900; color:var(--v); line-height:1; }
+    .lb-you-lbl  { font-size:10px; color:var(--txm); letter-spacing:.1em; text-transform:uppercase; }
+    .lb-list { max-width:530px; margin:0 auto; width:100%; padding:0 24px 60px; }
+    .lb-entry { display:flex; align-items:center; gap:14px; padding:12px 17px; border-radius:12px; margin-bottom:8px; border:1px solid transparent; }
+    .lb-entry:nth-child(1) { background:rgba(255,215,0,.05); border-color:rgba(255,215,0,.2); }
+    .lb-entry:nth-child(2) { background:rgba(192,192,192,.05); border-color:rgba(192,192,192,.15); }
+    .lb-entry:nth-child(3) { background:rgba(205,127,50,.05); border-color:rgba(205,127,50,.15); }
+    .lb-entry:not(:nth-child(-n+3)) { background:var(--s1); border-color:var(--br); }
+    .lb-rank { font-size:13px; font-weight:900; width:26px; text-align:center; flex-shrink:0; }
+    .lb-entry:nth-child(1) .lb-rank { color:gold; }
+    .lb-entry:nth-child(2) .lb-rank { color:silver; }
+    .lb-entry:nth-child(3) .lb-rank { color:#cd7f32; }
+    .lb-entry:not(:nth-child(-n+3)) .lb-rank { color:var(--txm); }
+    .lb-nm   { flex:1; font-size:15px; font-weight:700; }
+    .lb-corr { font-size:12px; color:var(--txm); }
+    .lb-sc   { font-family:var(--mono); font-size:18px; font-weight:700; color:var(--v); }
+    .lb-new  { font-size:9px; font-weight:700; letter-spacing:.08em; background:var(--o); color:#fff; padding:2px 7px; border-radius:50px; }
+    .lb-btns { display:flex; gap:12px; justify-content:center; padding-bottom:48px; }
+
+    /* ── LIGHT MODE ──────────────────────────────────────────────── */
+    [data-theme="light"] {
+      --bg:  #f4f5f7;   --s1:  #ffffff;   --s2:  #f0f1f3;   --s3:  #e4e5e8;
+      --br:  #dde0e5;   --br2: #c5cad3;
+      --tx:  #111318;   --txm: #6b7280;   --txd: #d1d5db;
+      --od:  rgba(255,78,13,0.10);   --og:  rgba(255,78,13,0.30);
+      --bd:  rgba(14,165,233,0.10);
+      --gd:  rgba(16,185,129,0.10);
+      --vd:  rgba(124,58,237,0.10);   --vg:  rgba(124,58,237,0.30);
+      --okd: rgba(34,197,94,0.10);
+      --erd: rgba(239,68,68,0.10);
+    }
+    [data-theme="light"] html,
+    [data-theme="light"] body,
+    html[data-theme="light"],
+    html[data-theme="light"] body { background:var(--bg); color:var(--tx); }
+    [data-theme="light"] .anav { background:rgba(244,245,247,.92); }
+    [data-theme="light"] .b0  { background:#e2e5ea; color:#9ca3af; }
+    [data-theme="light"] .h-hero::before { background:radial-gradient(circle,rgba(255,78,13,.04) 0%,transparent 58%); }
+    [data-theme="light"] .cls-card { box-shadow:0 12px 40px rgba(0,0,0,.10); }
+
+    /* ── THEME TOGGLE BUTTON ─────────────────────────────────────── */
+    .theme-toggle {
+      position:fixed; top:16px; right:20px; z-index:999;
+      width:40px; height:40px; border-radius:50%;
+      background:var(--s2); border:1px solid var(--br);
+      color:var(--txm); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .2s, border-color .2s, color .2s, box-shadow .2s, transform .25s;
+      box-shadow:0 2px 10px rgba(0,0,0,.18);
+    }
+    .theme-toggle:hover { color:var(--o); border-color:var(--o); box-shadow:0 4px 16px rgba(255,78,13,.25); transform:scale(1.08); }
+    .theme-toggle svg { width:18px; height:18px; }
+    .theme-toggle .icon-moon { display:none; }
+    [data-theme="light"] .theme-toggle .icon-sun  { display:none; }
+    [data-theme="light"] .theme-toggle .icon-moon { display:block; }
+
+    /* ── RESPONSIVE ─────────────────────────────────────────────── */
+    @media (max-width:960px) {
+      .h-grid { grid-template-columns:1fr 1fr; }
+      .h-nav  { padding:18px 24px; }
+      .h-nav-sub { display:none; }
+    }
+    @media (max-width:700px) {
+      .h-grid { grid-template-columns:1fr; }
+      .calc-wrap { grid-template-columns:1fr; padding:20px 16px; }
+      .cls-addr { font-size:36px; }
+      .cls-card { padding:32px 22px; }
+      .ta-hud   { padding:12px 18px; }
+      .anav     { padding:14px 18px; }
+      .h-hero   { padding:32px 18px 56px; }
+      .qr-grid  { grid-template-columns:1fr; }
+      .ta-opts  { grid-template-columns:1fr; }
+      .cls-ans-btns { gap:8px; }
+      .cabt { width:54px; height:54px; font-size:18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── THEME TOGGLE ──────────────────────────────────────────── -->
+<button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" aria-label="Toggle theme">
+  <!-- Sun icon (shown in dark mode) -->
+  <svg class="icon-sun" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+  </svg>
+  <!-- Moon icon (shown in light mode) -->
+  <svg class="icon-moon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+</button>
+
+<!-- ══════════════════════════════════════════════════════════════
+     HOME
+══════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="s-home">
+  <nav class="h-nav">
+    <div class="h-logo"><div class="h-dot"></div>NetLearn</div>
+    <div class="h-nav-sub">NETWORKING &amp; SYSTEM ADMINISTRATION</div>
+  </nav>
+  <main class="h-hero">
+    <p class="h-ey">Interactive Learning Tool</p>
+    <h1 class="h-ttl">Master Your Networks,<br><span class="acc">One Address at a Time</span></h1>
+    <p class="h-sub">Build real networking skills through hands-on calculation, adaptive quizzes, and rapid-fire challenges.</p>
+    <div class="h-grid">
+
+      <div class="hc" data-m="calc" onclick="nav('s-calc')">
+        <div class="hc-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="2" y="2" width="20" height="20" rx="3"/>
+            <path d="M7 7h10M7 12h6M7 17h4"/>
+          </svg>
+        </div>
+        <div class="hc-name">Calculator</div>
+        <p class="hc-desc">Enter an IP and subnet mask to instantly see network address, broadcast, wildcard, hosts, IP class, and a bit-level AND breakdown.</p>
+      </div>
+
+      <div class="hc" data-m="quiz" onclick="nav('s-quiz')">
+        <div class="hc-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 17h.01"/>
+          </svg>
+        </div>
+        <div class="hc-name">Quiz</div>
+        <p class="hc-desc">Answer questions about randomly generated subnets — IP class, network, broadcast, host count. Three difficulty levels with a score tracker.</p>
+      </div>
+
+      <div class="hc" data-m="class" onclick="nav('s-class');classInit()">
+        <div class="hc-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+        </div>
+        <div class="hc-name">IP Class Identifier</div>
+        <p class="hc-desc">Rapid-fire identification of IP classes A–E. Build streaks, increase speed, and sharpen your instincts under pressure.</p>
+      </div>
+
+      <div class="hc" data-m="attack" onclick="nav('s-attack')">
+        <div class="hc-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="hc-name">Time Attack</div>
+        <p class="hc-desc">60 seconds, rapid-fire networking questions, live leaderboard. Compete for the top session score with your classmates.</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     CALCULATOR
+══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-calc">
+  <nav class="anav">
+    <button class="back-btn" onclick="nav('s-home')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </button>
+    <span class="nav-ttl">Subnet Calculator</span>
+    <div class="nav-right"><span class="pill pill-o">Subnet Tool</span></div>
+  </nav>
+
+  <div class="calc-wrap">
+    <!-- LEFT: inputs -->
+    <div class="panel">
+      <p class="phd">Enter Address Details</p>
+      <div class="fg">
+        <label class="lbl" for="c-ip">IP Address</label>
+        <input class="inp" id="c-ip" type="text" inputmode="decimal" placeholder="e.g. 192.168.10.55" autocomplete="off" spellcheck="false"/>
+        <span class="etxt" id="c-ip-err">Invalid IP address</span>
+      </div>
+      <div class="fg">
+        <label class="lbl" for="c-mask">Subnet Mask</label>
+        <input class="inp" id="c-mask" type="text" inputmode="decimal" placeholder="e.g. 255.255.255.0" autocomplete="off" spellcheck="false"/>
+        <span class="etxt" id="c-mask-err">Invalid or non-contiguous subnet mask</span>
+      </div>
+      <button class="btn btn-o btn-w" onclick="calcCompute()" style="margin-bottom:10px">→ Calculate</button>
+      <button class="btn btn-ghost btn-w" id="c-rst-btn" style="display:none" onclick="calcReset()">↺ Reset</button>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div class="panel" id="c-result-panel">
+      <div class="ph" id="c-ph">
+        <svg width="66" height="66" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="3"/><path d="M7 7h10M7 12h6M7 17h4"/></svg>
+        <p>Enter an IP address and subnet mask,<br>then click <strong>Calculate</strong> to see full results.</p>
+      </div>
+      <div id="c-results" style="display:none">
+        <div class="res-hi">
+          <div class="rh-lbl">Network Address</div>
+          <div class="rh-val" id="c-net">─</div>
+          <div class="rh-meta" id="c-net-meta">─</div>
+        </div>
+        <div class="dgrid">
+          <div class="dr"><span class="drk">Broadcast</span><span class="drv" id="c-bc">─</span></div>
+          <div class="dr"><span class="drk">First Host</span><span class="drv oc" id="c-first">─</span></div>
+          <div class="dr"><span class="drk">Last Host</span><span class="drv oc" id="c-last">─</span></div>
+          <div class="dr"><span class="drk">Usable Hosts</span><span class="drv gc" id="c-hosts">─</span></div>
+          <div class="dr"><span class="drk">Wildcard Mask</span><span class="drv" id="c-wild">─</span></div>
+          <div class="dr"><span class="drk">IP Class</span><span class="drv cls-v" id="c-cls">─</span></div>
+        </div>
+        <div class="bits-box" id="c-bits"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     QUIZ
+══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-quiz">
+  <nav class="anav">
+    <button class="back-btn" onclick="nav('s-home')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </button>
+    <span class="nav-ttl">Quiz Mode</span>
+    <div class="nav-right"><span class="pill pill-b">Test Your Knowledge</span></div>
+  </nav>
+
+  <div class="quiz-wrap">
+    <div class="diff-row" role="tablist">
+      <button class="dtab on" onclick="quizSetDiff('beginner',this)">🟢 Beginner</button>
+      <button class="dtab" onclick="quizSetDiff('intermediate',this)">🔵 Intermediate</button>
+      <button class="dtab" onclick="quizSetDiff('advanced',this)">🟣 Advanced</button>
+    </div>
+
+    <div class="qscore-row">
+      <div class="qsc ok"><div class="qsc-v" id="q-corr">0</div><div class="qsc-l">Correct Qs</div></div>
+      <div class="qsc bad"><div class="qsc-v" id="q-wrong">0</div><div class="qsc-l">Wrong Qs</div></div>
+      <div class="qsc"><div class="qsc-v" id="q-chal" style="color:var(--tx)">0</div><div class="qsc-l">Challenges</div></div>
+    </div>
+
+    <div class="qip-card">
+      <div class="qip-ey">Challenge</div>
+      <div class="qip-addr" id="q-ip-txt">─── . ─── . ─── . ───</div>
+      <div class="qip-mask" id="q-mask-txt">Generate a challenge to begin</div>
+    </div>
+
+    <button class="btn btn-b btn-w" id="q-gen-btn" onclick="quizGenerate()" style="margin-bottom:18px">✦ Generate Challenge</button>
+
+    <div class="q-panel" id="q-panel">
+      <div class="qq">
+        <div class="qq-lbl">Q1 — What IP Class is this?</div>
+        <div class="class-btns">
+          <button class="cbtn" onclick="quizPickClass('A',this)">A</button>
+          <button class="cbtn" onclick="quizPickClass('B',this)">B</button>
+          <button class="cbtn" onclick="quizPickClass('C',this)">C</button>
+          <button class="cbtn" onclick="quizPickClass('D',this)">D</button>
+          <button class="cbtn" onclick="quizPickClass('E',this)">E</button>
+        </div>
+      </div>
+      <div class="qq">
+        <div class="qq-lbl">Q2 — What is the Network Address?</div>
+        <input class="q-inp" id="q-net" type="text" placeholder="e.g. 192.168.1.0" inputmode="decimal" spellcheck="false" autocomplete="off"/>
+        <span class="q-hint" id="q-net-hint"></span>
+      </div>
+      <div class="qq">
+        <div class="qq-lbl">Q3 — What is the Broadcast Address?</div>
+        <input class="q-inp" id="q-bc" type="text" placeholder="e.g. 192.168.1.255" inputmode="decimal" spellcheck="false" autocomplete="off"/>
+        <span class="q-hint" id="q-bc-hint"></span>
+      </div>
+      <div class="qq">
+        <div class="qq-lbl">Q4 — How many Usable Hosts are in this subnet?</div>
+        <input class="q-inp" id="q-hosts" type="number" min="0" placeholder="e.g. 254"/>
+        <span class="q-hint" id="q-hosts-hint"></span>
+      </div>
+    </div>
+
+    <div class="q-act">
+      <button class="btn btn-b btn-w" id="q-sub-btn" onclick="quizSubmit()">✓ Check Answers</button>
+      <button class="btn btn-ghost btn-w" id="q-nxt-btn" style="display:none" onclick="quizGenerate()">Next Challenge →</button>
+    </div>
+
+    <div class="q-reveal" id="q-reveal">
+      <div class="qr-hd">Correct Answers &amp; Full Explanation</div>
+      <div class="qr-grid" id="q-rv-grid"></div>
+      <div class="wc-box" id="q-wc"></div>
+      <div class="bits-box" id="q-bits"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     IP CLASS IDENTIFIER
+══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-class">
+  <nav class="anav">
+    <button class="back-btn" onclick="classStop();nav('s-home')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </button>
+    <span class="nav-ttl">IP Class Identifier</span>
+    <div class="nav-right"><span class="pill pill-g">Rapid Fire</span></div>
+  </nav>
+
+  <div class="cls-wrap">
+    <!-- Streak + speed row -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div class="streak-area">
+        <div class="streak-num" id="cls-streak">0</div>
+        <div class="streak-info">
+          <div class="streak-lbl">🔥 Streak</div>
+          <div class="streak-best">Best: <span id="cls-best">0</span></div>
+        </div>
+      </div>
+      <div class="speed-row">
+        SPEED
+        <div class="spd-track"><div class="spd-fill" id="cls-spd" style="width:0%"></div></div>
+        <span id="cls-spd-lbl">─</span>
+      </div>
+    </div>
+
+    <!-- Start area -->
+    <div class="cls-start-area" id="cls-start-area">
+      <h2>Ready to Test Your Speed?</h2>
+      <p>An IP address will flash on screen. Select its class (A, B, C, D, or E) as fast as you can. Your streak grows with every correct answer — and so does the time pressure!</p>
+      <button class="btn btn-g" onclick="classStart()">▶ Start Game</button>
+    </div>
+
+    <!-- Game area -->
+    <div class="cls-game-area" id="cls-game-area">
+      <div class="cls-card">
+        <div class="cls-ey">Identify the IP Class</div>
+        <div class="cls-addr" id="cls-ip">─── . ─── . ─── . ───</div>
+        <div class="cls-tbar-wrap"><div class="cls-tbar" id="cls-tbar" style="width:100%"></div></div>
+      </div>
+      <div class="cls-ans-btns" id="cls-btns">
+        <button class="cabt" onclick="classAnswer('A',this)">A</button>
+        <button class="cabt" onclick="classAnswer('B',this)">B</button>
+        <button class="cabt" onclick="classAnswer('C',this)">C</button>
+        <button class="cabt" onclick="classAnswer('D',this)">D</button>
+        <button class="cabt" onclick="classAnswer('E',this)">E</button>
+      </div>
+      <div class="cls-fb-area">
+        <div class="fb-pill" id="cls-fb"></div>
+      </div>
+      <div class="cls-totals">
+        Correct: <strong id="cls-tc">0</strong>
+        &nbsp;Incorrect: <strong id="cls-tw">0</strong>
+        &nbsp;Total: <strong id="cls-tt">0</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TIME ATTACK
+══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-attack">
+  <nav class="anav">
+    <button class="back-btn" onclick="attackStop();nav('s-home')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </button>
+    <span class="nav-ttl">Time Attack</span>
+    <div class="nav-right"><span class="pill pill-v">60 Seconds</span></div>
+  </nav>
+
+  <!-- Setup -->
+  <div class="ta-setup" id="ta-setup">
+    <div class="ta-sc">
+      <div class="ta-sc-icon">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <h2 class="ta-sc-ttl">Time Attack</h2>
+      <p class="ta-sc-sub">Answer as many networking questions as possible in 60 seconds. Harder subnets earn more points. Compete for the leaderboard!</p>
+      <input class="ta-name-inp" id="ta-name" type="text" placeholder="Enter your name…" maxlength="20"/>
+      <button class="btn btn-v btn-w" onclick="attackStart()">⚡ Start Time Attack</button>
+    </div>
+  </div>
+
+  <!-- Game -->
+  <div class="ta-game" id="ta-game">
+    <div class="ta-hud">
+      <div class="ta-timer-wrap">
+        <div class="ta-ring" id="ta-ring">
+          <svg width="54" height="54" viewBox="0 0 54 54">
+            <circle class="tr tr-track" cx="27" cy="27" r="22"/>
+            <circle class="tr tr-fill" id="ta-ring-fill" cx="27" cy="27" r="22"
+              stroke-dasharray="138.23" stroke-dashoffset="0"/>
+          </svg>
+        </div>
+        <div class="ta-tnum" id="ta-timer">60</div>
+      </div>
+      <div class="ta-chips">
+        <div class="ta-chip"><div class="v" id="ta-score">0</div><div class="l">Points</div></div>
+        <div class="ta-chip"><div class="v" id="ta-ck">0</div><div class="l">Correct</div></div>
+        <div class="ta-chip"><div class="v" id="ta-asked">0</div><div class="l">Asked</div></div>
+      </div>
+    </div>
+    <div class="ta-main">
+      <div class="ta-qcard">
+        <div class="ta-pts-badge easy" id="ta-pts-badge">+10 PTS</div>
+        <div class="ta-qtext" id="ta-qtext">Loading…</div>
+        <div class="ta-qip" id="ta-qip"></div>
+        <div class="ta-opts" id="ta-opts"></div>
+      </div>
+      <div class="ta-feedback-msg" id="ta-fb-msg"></div>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="ta-lb" id="ta-lb">
+    <div class="lb-top">
+      <div class="lb-ttl">🏆 Leaderboard</div>
+      <div class="lb-sub2">Session scores — top 10</div>
+    </div>
+    <div class="lb-you">
+      <div class="lb-you-info"><div class="lbl1">Your Latest Score</div><div class="name" id="lb-your-name">─</div></div>
+      <div class="lb-you-right"><div class="lb-you-pts" id="lb-your-pts">0</div><div class="lb-you-lbl">Points</div></div>
+    </div>
+    <div class="lb-list" id="lb-list"></div>
+    <div class="lb-btns">
+      <button class="btn btn-v" onclick="attackSetup()">▶ Play Again</button>
+      <button class="btn btn-ghost" onclick="nav('s-home')">⌂ Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════════ -->
+<script>
+/* ══ THEME TOGGLE ═══════════════════════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  localStorage.setItem('nl-theme', isLight ? 'dark' : 'light');
+}
+(function applyStoredTheme() {
+  const saved = localStorage.getItem('nl-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ══ CORE NETWORKING MATH ══════════════════════════════════════ */
+function ip2int(p)    { return ((p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3])>>>0; }
+function int2ip(n)    { n>>>=0; return`${(n>>>24)&255}.${(n>>>16)&255}.${(n>>>8)&255}.${n&255}`; }
+function pfx2mask(p)  { if(p===0)return[0,0,0,0]; const m=(~((1<<(32-p))-1))>>>0; return[(m>>>24)&255,(m>>>16)&255,(m>>>8)&255,m&255]; }
+function mask2pfx(pts){ let c=0; for(const o of pts) for(let i=7;i>=0;i--){ if((o>>i)&1)c++; else if(c>0)return c; } return c; }
+function validMask(pts){ const inv=(~ip2int(pts))>>>0; return(inv&(inv+1))===0; }
+
+function parseIP(s) {
+  const p=s.trim().split('.'); if(p.length!==4)return null;
+  const t=p.map(x=>x.trim()), n=t.map(Number);
+  if(n.some((v,i)=>isNaN(v)||v<0||v>255||String(v)!==t[i]))return null;
+  return n;
+}
+
+function ipClass(f) {
+  if(f<=127)return'A'; if(f<=191)return'B'; if(f<=223)return'C'; if(f<=239)return'D'; return'E';
+}
+function classRange(c) {
+  const map={A:'1–126',B:'128–191',C:'192–223',D:'224–239',E:'240–255'};
+  return map[c]||'?';
+}
+function classDesc(c) {
+  const d={A:'Class A — Large networks (1–126)',B:'Class B — Medium networks (128–191)',C:'Class C — Small/local networks (192–223)',D:'Class D — Multicast (224–239)',E:'Class E — Experimental/Reserved (240–255)'};
+  return d[c]||'Unknown';
+}
+
+function calcSubnet(ip, mask) {
+  const ipI=ip2int(ip), mkI=ip2int(mask);
+  const netI=(ipI&mkI)>>>0, wildI=(~mkI)>>>0, bcI=(netI|wildI)>>>0;
+  const hosts=Math.max(0,wildI-1), pfx=mask2pfx(mask);
+  const netP=[(netI>>>24)&255,(netI>>>16)&255,(netI>>>8)&255,netI&255];
+  return { net:int2ip(netI), netP, bc:int2ip(bcI),
+    first:hosts>0?int2ip(netI+1):'N/A', last:hosts>0?int2ip(bcI-1):'N/A',
+    wild:int2ip(wildI), hosts, pfx, maskStr:int2ip(mkI), cls:ipClass(ip[0]) };
+}
+
+/* ══ RANDOM GENERATION ══════════════════════════════════════════ */
+function rnd(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
+function randIPByClass(c) {
+  const m={A:[1,126],B:[128,191],C:[192,223],D:[224,239],E:[240,254]};
+  const r=m[c]||m.C; return [rnd(r[0],r[1]),rnd(0,255),rnd(0,255),rnd(0,255)];
+}
+function randChallenge(diff) {
+  let ip, pfx;
+  if     (diff==='beginner')     { ip=randIPByClass('C'); pfx=24; }
+  else if(diff==='intermediate') { ip=randIPByClass(['B','C'][rnd(0,1)]); pfx=[25,26,27][rnd(0,2)]; }
+  else                           { ip=randIPByClass(['A','B','C'][rnd(0,2)]); pfx=[17,18,19,20,21,22,28,29,30][rnd(0,8)]; }
+  return { ip, pfx, mask:pfx2mask(pfx) };
+}
+
+/* ══ UI UTILITIES ═══════════════════════════════════════════════ */
+const $=id=>document.getElementById(id);
+const setTxt=(id,t)=>$(id).textContent=t;
+
+function nav(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+/* Render bitwise AND visualization */
+function renderBits(containerId, ip, mask, net) {
+  const rows=[{lbl:'IP',pts:ip},{lbl:'Mask',pts:mask},{lbl:'Network',pts:net}];
+  let html=`<div class="bits-hd">Bitwise AND — IP ∧ Mask → Network Address</div>`;
+  rows.forEach((row,ri)=>{
+    if(ri===2) html+=`<hr class="brule">`;
+    html+=`<div class="brow"><div class="blbl">${row.lbl}</div><div class="bvis">`;
+    row.pts.forEach((octet,oi)=>{
+      html+=`<div class="boct"><div class="bbits">`;
+      for(let i=7;i>=0;i--){ const b=(octet>>i)&1; html+=`<div class="bit ${b?'b1':'b0'}">${b}</div>`; }
+      html+=`</div><span class="bdec">${octet}</span></div>`;
+      if(oi<3) html+=`<div class="bsep">.</div>`;
+    });
+    html+=`</div></div>`;
+  });
+  $(containerId).innerHTML=html;
+}
+
+/* ══ CALCULATOR MODE ════════════════════════════════════════════ */
+function calcCompute() {
+  const ipStr=$('c-ip').value, mkStr=$('c-mask').value;
+  const ip=parseIP(ipStr), mk=parseIP(mkStr), mkOk=mk&&validMask(mk);
+
+  $('c-ip').classList.toggle('err',!ip);   $('c-ip-err').classList.toggle('show',!ip);
+  $('c-mask').classList.toggle('err',!mkOk); $('c-mask-err').classList.toggle('show',!mkOk);
+
+  if(!ip||!mkOk){ $('c-results').style.display='none'; $('c-ph').style.display=''; return; }
+
+  const r=calcSubnet(ip,mk);
+  setTxt('c-net',r.net);
+  setTxt('c-net-meta',`/${r.pfx}  ·  ${r.cls} — ${classRange(r.cls)}`);
+  setTxt('c-bc',r.bc);
+  setTxt('c-first',r.first);
+  setTxt('c-last',r.last);
+  setTxt('c-hosts',r.hosts.toLocaleString()+' hosts');
+  setTxt('c-wild',r.wild);
+  $('c-cls').innerHTML=`<span style="background:var(--od);color:var(--o);border:1px solid rgba(255,78,13,.25);border-radius:50px;padding:2px 12px;font-weight:700">${classDesc(r.cls)}</span>`;
+  renderBits('c-bits',ip,mk,r.netP);
+  $('c-ph').style.display='none';
+  $('c-results').style.display='';
+  $('c-rst-btn').style.display='';
+}
+
+function calcReset() {
+  $('c-ip').value=''; $('c-mask').value='';
+  ['c-ip','c-mask'].forEach(id=>$(id).classList.remove('err'));
+  ['c-ip-err','c-mask-err'].forEach(id=>$(id).classList.remove('show'));
+  $('c-results').style.display='none'; $('c-ph').style.display='';
+  $('c-rst-btn').style.display='none';
+  $('c-ip').focus();
+}
+
+['c-ip','c-mask'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')calcCompute();}));
+
+/* ══ QUIZ MODE ══════════════════════════════════════════════════ */
+const quizS = {
+  diff:'beginner', ip:null, mask:null, pfx:0, result:null,
+  selClass:null, submitted:false,
+  qCorr:0, qWrong:0, challenges:0
+};
+
+function quizSetDiff(d,btn) {
+  quizS.diff=d;
+  document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function quizPickClass(c,btn) {
+  if(quizS.submitted)return;
+  document.querySelectorAll('.cbtn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  quizS.selClass=c;
+}
+
+function quizGenerate() {
+  const ch=randChallenge(quizS.diff);
+  quizS.ip=ch.ip; quizS.mask=ch.mask; quizS.pfx=ch.pfx;
+  quizS.result=calcSubnet(ch.ip,ch.mask);
+  quizS.selClass=null; quizS.submitted=false;
+
+  setTxt('q-ip-txt',ch.ip.join('.'));
+  setTxt('q-mask-txt',`Mask: ${ch.mask.join('.')}  (/${ch.pfx})`);
+
+  document.querySelectorAll('.cbtn').forEach(b=>{b.className='cbtn';b.disabled=false;});
+  ['q-net','q-bc','q-hosts'].forEach(id=>{const e=$(id);e.value='';e.className='q-inp';e.disabled=false;});
+  ['q-net-hint','q-bc-hint','q-hosts-hint'].forEach(id=>{const e=$(id);e.className='q-hint';e.textContent='';});
+  $('q-reveal').className='q-reveal';
+  $('q-sub-btn').style.display='';
+  $('q-nxt-btn').style.display='none';
+}
+
+function quizSubmit() {
+  if(!quizS.result){alert('Please generate a challenge first!');return;}
+  if(quizS.submitted)return;
+  quizS.submitted=true;
+  const r=quizS.result;
+  let nc=0, nw=0;
+
+  // Q1 class
+  document.querySelectorAll('.cbtn').forEach(b=>{
+    const v=b.textContent.trim();
+    if(v===r.cls)          b.className='cbtn rv-ok';
+    else if(v===quizS.selClass) b.className='cbtn rv-bad';
+    else                   b.className='cbtn rv-nt';
+    b.disabled=true;
+  });
+  quizS.selClass===r.cls ? nc++ : nw++;
+
+  // Q2 network
+  const netOk=normalIP($('q-net').value)===r.net;
+  $('q-net').className='q-inp '+(netOk?'rv-ok':'rv-bad'); $('q-net').disabled=true;
+  $('q-net-hint').className='q-hint show '+(netOk?'ok':'bad');
+  $('q-net-hint').textContent=netOk?'✓ Correct!':'✗ Correct: '+r.net;
+  netOk?nc++:nw++;
+
+  // Q3 broadcast
+  const bcOk=normalIP($('q-bc').value)===r.bc;
+  $('q-bc').className='q-inp '+(bcOk?'rv-ok':'rv-bad'); $('q-bc').disabled=true;
+  $('q-bc-hint').className='q-hint show '+(bcOk?'ok':'bad');
+  $('q-bc-hint').textContent=bcOk?'✓ Correct!':'✗ Correct: '+r.bc;
+  bcOk?nc++:nw++;
+
+  // Q4 hosts
+  const hostsOk=parseInt($('q-hosts').value)===r.hosts;
+  $('q-hosts').className='q-inp '+(hostsOk?'rv-ok':'rv-bad'); $('q-hosts').disabled=true;
+  $('q-hosts-hint').className='q-hint show '+(hostsOk?'ok':'bad');
+  $('q-hosts-hint').textContent=hostsOk?'✓ Correct!':'✗ Correct: '+r.hosts.toLocaleString();
+  hostsOk?nc++:nw++;
+
+  quizS.qCorr+=nc; quizS.qWrong+=nw; quizS.challenges++;
+  setTxt('q-corr',quizS.qCorr); setTxt('q-wrong',quizS.qWrong); setTxt('q-chal',quizS.challenges);
+
+  // Build reveal
+  $('q-rv-grid').innerHTML=`
+    <div class="qr-item"><div class="qr-k">Network Address</div><div class="qr-v bc">${r.net}/${r.pfx}</div></div>
+    <div class="qr-item"><div class="qr-k">Broadcast Address</div><div class="qr-v">${r.bc}</div></div>
+    <div class="qr-item"><div class="qr-k">First Host</div><div class="qr-v">${r.first}</div></div>
+    <div class="qr-item"><div class="qr-k">Last Host</div><div class="qr-v">${r.last}</div></div>
+    <div class="qr-item"><div class="qr-k">Usable Hosts</div><div class="qr-v bc">${r.hosts.toLocaleString()}</div></div>
+    <div class="qr-item"><div class="qr-k">IP Class</div><div class="qr-v bc">Class ${r.cls} — ${classRange(r.cls)}</div></div>
+  `;
+  $('q-wc').innerHTML=`<strong>Wildcard Mask: ${r.wild}</strong> — The wildcard mask is the bitwise inverse of the subnet mask. It identifies the <em>host portion</em> of an address. A <strong>1</strong> bit means "don't care" (any value is allowed); a <strong>0</strong> bit means "must match exactly." Wildcard masks are widely used in routing ACLs to match address ranges.`;
+  renderBits('q-bits',quizS.ip,quizS.mask,r.netP);
+  $('q-reveal').className='q-reveal show';
+  $('q-sub-btn').style.display='none';
+  $('q-nxt-btn').style.display='';
+}
+
+function normalIP(s) {
+  if(!s) return '';
+  const p=parseIP(s); return p?p.join('.'):s.trim();
+}
+
+/* ══ IP CLASS IDENTIFIER ════════════════════════════════════════ */
+const classS = { streak:0, best:0, tc:0, tw:0, tt:0, curIP:null, curCls:null, timerId:null, answered:false };
+
+function classInit() {
+  // Reset UI to start screen every time we enter the mode
+  $('cls-start-area').style.display='';
+  $('cls-game-area').style.display='none';
+}
+
+function getTimeLimit(s) {
+  if(s>=15)return 2; if(s>=12)return 3; if(s>=8)return 4; if(s>=4)return 6; return 8;
+}
+function getSpeedPct(s) {
+  if(s>=15)return 100; if(s>=12)return 82; if(s>=8)return 62; if(s>=4)return 40; return 12;
+}
+
+function classStart() {
+  $('cls-start-area').style.display='none';
+  $('cls-game-area').style.display='flex';
+  classNextIP();
+}
+
+function classNextIP() {
+  classS.answered=false;
+  const classes=['A','B','C','D','E'];
+  classS.curCls=classes[rnd(0,4)];
+  classS.curIP=randIPByClass(classS.curCls);
+  setTxt('cls-ip',classS.curIP.join('.'));
+
+  // Reset buttons
+  document.querySelectorAll('.cabt').forEach(b=>{b.className='cabt';b.disabled=false;});
+  const fb=$('cls-fb'); fb.className='fb-pill'; fb.textContent='';
+
+  // Animate timer bar
+  const tl=getTimeLimit(classS.streak);
+  const bar=$('cls-tbar');
+  bar.className='cls-tbar'; bar.style.setProperty('--dur',tl+'s');
+  void bar.offsetWidth; // force reflow
+  bar.className='cls-tbar running';
+
+  // Speed display
+  $('cls-spd').style.width=getSpeedPct(classS.streak)+'%';
+  setTxt('cls-spd-lbl',tl+'s');
+
+  if(classS.timerId) clearTimeout(classS.timerId);
+  classS.timerId=setTimeout(()=>{ if(!classS.answered) classTimeout(); }, tl*1000);
+}
+
+function classAnswer(cls, btn) {
+  if(classS.answered) return;
+  classS.answered=true;
+  if(classS.timerId){ clearTimeout(classS.timerId); classS.timerId=null; }
+
+  $('cls-tbar').style.animationPlayState='paused';
+
+  const correct=cls===classS.curCls;
+  // Mark buttons
+  document.querySelectorAll('.cabt').forEach(b=>{
+    const v=b.textContent.trim();
+    if(v===classS.curCls)  b.className='cabt ok';
+    else if(v===cls&&!correct) b.className='cabt bad';
+    else b.disabled=true;
+  });
+
+  const fb=$('cls-fb');
+  if(correct) {
+    classS.streak++;
+    if(classS.streak>classS.best){ classS.best=classS.streak; setTxt('cls-best',classS.best); }
+    classS.tc++;
+    fb.className='fb-pill ok show';
+    fb.textContent=`✓ Correct! Class ${cls} — ${classRange(cls)}`;
+  } else {
+    classS.streak=0;
+    classS.tw++;
+    fb.className='fb-pill bad show';
+    fb.textContent=`✗ Wrong — Class ${classS.curCls}: ${classRange(classS.curCls)}`;
+  }
+  classS.tt++;
+  setTxt('cls-streak',classS.streak);
+  setTxt('cls-tc',classS.tc); setTxt('cls-tw',classS.tw); setTxt('cls-tt',classS.tt);
+
+  setTimeout(classNextIP, 1400);
+}
+
+function classTimeout() {
+  if(classS.answered) return;
+  classS.answered=true;
+  classS.streak=0; classS.tw++; classS.tt++;
+  document.querySelectorAll('.cabt').forEach(b=>{
+    if(b.textContent.trim()===classS.curCls) b.className='cabt ok';
+    else b.disabled=true;
+  });
+  const fb=$('cls-fb');
+  fb.className='fb-pill bad show';
+  fb.textContent=`⏱ Time's up! Answer: Class ${classS.curCls} — ${classRange(classS.curCls)}`;
+  setTxt('cls-streak',0); setTxt('cls-tw',classS.tw); setTxt('cls-tt',classS.tt);
+  setTimeout(classNextIP,1600);
+}
+
+function classStop() {
+  if(classS.timerId){ clearTimeout(classS.timerId); classS.timerId=null; }
+  classS.streak=0; classS.best=0; classS.tc=0; classS.tw=0; classS.tt=0;
+  setTxt('cls-streak',0); setTxt('cls-best',0);
+  setTxt('cls-tc',0); setTxt('cls-tw',0); setTxt('cls-tt',0);
+}
+
+/* ══ TIME ATTACK ════════════════════════════════════════════════ */
+const attackS = { player:'', score:0, correct:0, asked:0, timeLeft:60, timerId:null, active:false, curQ:null };
+const leaderboard = [];
+const CIRCUMFERENCE = 2*Math.PI*22; // r=22, C≈138.23
+
+function attackSetup() {
+  attackStop();
+  $('ta-lb').classList.remove('on');
+  $('ta-game').classList.remove('on');
+  $('ta-setup').style.display='';
+}
+
+function attackStart() {
+  const name=($('ta-name').value||'').trim();
+  if(!name){ $('ta-name').focus(); $('ta-name').style.borderColor='var(--er)'; return; }
+  $('ta-name').style.borderColor='';
+  attackS.player=name; attackS.score=0; attackS.correct=0; attackS.asked=0;
+  attackS.timeLeft=60; attackS.active=true;
+
+  setTxt('ta-score',0); setTxt('ta-ck',0); setTxt('ta-asked',0);
+  setTxt('ta-timer',60);
+  $('ta-ring').classList.remove('danger');
+  $('ta-ring-fill').style.strokeDashoffset=0;
+  $('ta-timer').classList.remove('danger');
+
+  $('ta-setup').style.display='none';
+  $('ta-lb').classList.remove('on');
+  $('ta-game').classList.add('on');
+
+  attackNextQ();
+  attackS.timerId=setInterval(attackTick,1000);
+}
+
+function attackTick() {
+  attackS.timeLeft--;
+  setTxt('ta-timer',attackS.timeLeft);
+  const pct=attackS.timeLeft/60;
+  $('ta-ring-fill').style.strokeDashoffset=CIRCUMFERENCE*(1-pct);
+  if(attackS.timeLeft<=10){
+    $('ta-ring').classList.add('danger');
+    $('ta-timer').classList.add('danger');
+  }
+  if(attackS.timeLeft<=0) attackEnd();
+}
+
+function attackEnd() {
+  clearInterval(attackS.timerId); attackS.active=false;
+  leaderboard.push({name:attackS.player,score:attackS.score,correct:attackS.correct,ts:Date.now()});
+  leaderboard.sort((a,b)=>b.score-a.score);
+  while(leaderboard.length>10) leaderboard.pop();
+
+  setTxt('lb-your-name',attackS.player);
+  setTxt('lb-your-pts',attackS.score);
+  $('ta-game').classList.remove('on');
+  $('ta-lb').classList.add('on');
+  renderLeaderboard();
+}
+
+function attackStop() {
+  clearInterval(attackS.timerId); attackS.active=false;
+}
+
+/* Question types: 0=class, 1=network, 2=broadcast, 3=hosts, 4=wildcard */
+function attackNextQ() {
+  if(!attackS.active) return;
+  const type=rnd(0,4);
+  let diff, pfx, pts;
+
+  // Assign difficulty by type complexity
+  const diffRoll=rnd(0,2);
+  if(diffRoll===0)     { diff='beginner';     pfx=24;                              pts=10; }
+  else if(diffRoll===1){ diff='intermediate'; pfx=[25,26,27][rnd(0,2)];            pts=20; }
+  else                 { diff='advanced';     pfx=[17,18,19,20,21,22,28,29,30][rnd(0,8)]; pts=30; }
+
+  const cls=['A','B','C'][rnd(0,2)];
+  const ip=randIPByClass(cls);
+  const mask=pfx2mask(pfx);
+  const r=calcSubnet(ip,mask);
+
+  let qtext, qip, correct, options;
+  const ipStr=ip.join('.')+` / ${pfx}`;
+
+  if(type===0) {
+    // IP class question — simpler, show just the IP
+    qtext='What is the IP Class of:'; qip=ip.join('.');
+    correct=r.cls;
+    const all=['A','B','C','D','E'];
+    const wrongs=all.filter(c=>c!==correct).sort(()=>Math.random()-.5).slice(0,3);
+    options=[correct,...wrongs].sort(()=>Math.random()-.5);
+    pts=Math.min(pts,10); // class questions are easier bonus
+  } else if(type===1){
+    qtext='What is the NETWORK ADDRESS for:'; qip=ipStr;
+    correct=r.net;
+    options=wrongIPs(r.net,r.netP,3,true);
+  } else if(type===2){
+    qtext='What is the BROADCAST ADDRESS for:'; qip=ipStr;
+    correct=r.bc;
+    options=wrongIPs(r.bc,r.netP,3,false);
+  } else if(type===3){
+    qtext='How many USABLE HOSTS in:'; qip=ipStr;
+    correct=r.hosts.toLocaleString();
+    options=wrongHosts(r.hosts,3).map(n=>n.toLocaleString());
+  } else {
+    qtext='What is the WILDCARD MASK for:'; qip=`/${pfx}  (${mask.join('.')})`;
+    correct=r.wild;
+    options=wrongIPs(r.wild,[255-r.netP[0],255-r.netP[1],255-r.netP[2],255-r.netP[3]],3,false);
+  }
+
+  attackS.curQ={correct,pts};
+  attackS.asked++;
+  setTxt('ta-asked',attackS.asked);
+  setTxt('ta-qtext',qtext);
+  setTxt('ta-qip',qip);
+
+  const badge=$('ta-pts-badge');
+  badge.className='ta-pts-badge '+(pts===10?'easy':pts===20?'med':'hard');
+  setTxt('ta-pts-badge',`+${pts} PTS`);
+
+  $('ta-fb-msg').textContent='';
+  $('ta-fb-msg').className='ta-feedback-msg';
+
+  const opts=$('ta-opts');
+  opts.innerHTML='';
+  options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='ta-opt';
+    btn.textContent=opt;
+    btn.id='ta-opt-'+i;
+    btn.onclick=()=>attackAnswer(opt,i);
+    opts.appendChild(btn);
+  });
+}
+
+function attackAnswer(chosen, idx) {
+  if(!attackS.active) return;
+  const {correct,pts}=attackS.curQ;
+  const isOk=(chosen===correct)||(chosen.replace(/,/g,'')===correct.replace(/,/g,''));
+  const opts=document.querySelectorAll('.ta-opt');
+
+  opts.forEach((b,i)=>{
+    if(b.textContent===correct || b.textContent.replace(/,/g,'')===correct.replace(/,/g,'')) b.classList.add('ok');
+    else if(i===idx && !isOk) b.classList.add('bad');
+    else b.classList.add('disabled');
+  });
+
+  const fb=$('ta-fb-msg');
+  if(isOk){
+    attackS.score+=pts; attackS.correct++;
+    setTxt('ta-score',attackS.score); setTxt('ta-ck',attackS.correct);
+    fb.textContent=`✓ Correct! +${pts} pts`; fb.className='ta-feedback-msg ok';
+    // Score bump animation
+    $('ta-score').style.transform='scale(1.25)';
+    setTimeout(()=>{ $('ta-score').style.transform=''; },200);
+  } else {
+    fb.textContent=`✗ Correct answer: ${correct}`; fb.className='ta-feedback-msg bad';
+  }
+
+  setTimeout(attackNextQ, 900);
+}
+
+function wrongIPs(correct, netP, count, isNet) {
+  const results=new Set([correct]);
+  const p=[...netP];
+  const offsets=[1,2,4,8,16,32,64,128,255];
+  for(const off of offsets){
+    if(results.size>count)break;
+    const t=[...p]; t[3]=(t[3]+off)&255; const s=t.join('.'); if(s!==correct)results.add(s);
+  }
+  for(const off of offsets){
+    if(results.size>count)break;
+    const t=[...p]; t[2]=(t[2]+off)&255; const s=t.join('.'); if(s!==correct)results.add(s);
+  }
+  while(results.size<=count){
+    const t=[rnd(1,254),rnd(0,255),rnd(0,255),rnd(0,255)]; results.add(t.join('.'));
+  }
+  return [...results].slice(0,count+1).sort(()=>Math.random()-.5);
+}
+
+function wrongHosts(correct, count) {
+  const results=new Set([correct]);
+  const tries=[correct-1,correct+1,correct*2,Math.floor(correct/2),correct-2,correct+2,correct-32,correct+30];
+  for(const v of tries){ if(results.size>count)break; if(v>=0&&v!==correct)results.add(v); }
+  while(results.size<=count){ results.add(Math.max(0,correct+rnd(-100,100))); }
+  return [...results].slice(0,count+1).sort(()=>Math.random()-.5);
+}
+
+function renderLeaderboard() {
+  $('lb-list').innerHTML=leaderboard.map((e,i)=>{
+    const isNew=e.name===attackS.player&&e.ts===Math.max(...leaderboard.map(x=>x.ts));
+    const medals=['🥇','🥈','🥉'];
+    const rankStr=i<3?medals[i]:String(i+1);
+    return`<div class="lb-entry">
+      <div class="lb-rank">${rankStr}</div>
+      <div class="lb-nm">${e.name} ${isNew?'<span class="lb-new">NEW</span>':''}</div>
+      <div class="lb-corr">${e.correct} correct</div>
+      <div class="lb-sc">${e.score}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ ENTER KEY SHORTCUTS ════════════════════════════════════════ */
+$('ta-name').addEventListener('keydown',e=>{ if(e.key==='Enter')attackStart(); });
+</script>
+</body>
+</html>
