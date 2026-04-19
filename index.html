@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     /* ── RESET ──────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -430,6 +431,14 @@
       .cls-ans-btns { gap:8px; }
       .cabt { width:54px; height:54px; font-size:18px; }
     }
+
+    /* ── PLAYER NAME ROW ─────────────────────────────────────────── */
+    .pnr { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--s1); border:1px solid var(--br); border-radius:12px; margin-bottom:18px; }
+    .pnr-lbl { font-size:10px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--txm); flex-shrink:0; }
+    .pnr-inp { flex:1; background:transparent; border:none; outline:none; color:var(--tx); font-family:var(--ui); font-size:14px; font-weight:600; min-width:0; }
+    .pnr-inp::placeholder { color:var(--txd); }
+    .pnr-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:var(--od); color:var(--o); border:1px solid rgba(255,78,13,.25); cursor:pointer; font-size:13px; flex-shrink:0; transition:all .15s; }
+    .pnr-btn:hover { background:var(--o); color:#fff; }
   </style>
 </head>
 <body>
@@ -580,6 +589,12 @@
   </nav>
 
   <div class="quiz-wrap">
+    <!-- Player name row -->
+    <div class="pnr">
+      <span class="pnr-lbl">Playing as</span>
+      <input class="pnr-inp" id="q-player-name" type="text" placeholder="Enter your name to track scores…" maxlength="20" onkeydown="if(event.key==='Enter')saveQuizName()"/>
+      <button class="pnr-btn" onclick="saveQuizName()" title="Save name">✓</button>
+    </div>
     <div class="diff-row" role="tablist">
       <button class="dtab on" onclick="quizSetDiff('beginner',this)">🟢 Beginner</button>
       <button class="dtab" onclick="quizSetDiff('intermediate',this)">🔵 Intermediate</button>
@@ -676,6 +691,10 @@
     <div class="cls-start-area" id="cls-start-area">
       <h2>Ready to Test Your Speed?</h2>
       <p>An IP address will flash on screen. Select its class (A, B, C, D, or E) as fast as you can. Your streak grows with every correct answer — and so does the time pressure!</p>
+      <div class="fg" style="width:100%;max-width:320px;text-align:left;margin-bottom:4px">
+        <label class="lbl" for="cls-player-name">Your Name (for leaderboard)</label>
+        <input class="inp" id="cls-player-name" type="text" placeholder="Enter your name…" maxlength="20" onkeydown="if(event.key==='Enter')classStart()"/>
+      </div>
       <button class="btn btn-g" onclick="classStart()">▶ Start Game</button>
     </div>
 
@@ -767,7 +786,7 @@
   <div class="ta-lb" id="ta-lb">
     <div class="lb-top">
       <div class="lb-ttl">🏆 Leaderboard</div>
-      <div class="lb-sub2">Session scores — top 10</div>
+      <div class="lb-sub2" id="lb-sub2">Session scores — top 10</div>
     </div>
     <div class="lb-you">
       <div class="lb-you-info"><div class="lbl1">Your Latest Score</div><div class="name" id="lb-your-name">─</div></div>
@@ -796,6 +815,60 @@ function toggleTheme() {
   const saved = localStorage.getItem('nl-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', saved);
 })();
+
+/* ══ BACKEND CONFIG ══════════════════════════════════════════════
+   Set BACKEND_URL to your Render.com URL after deploying.
+   Leave empty to run in offline/session-only mode.
+════════════════════════════════════════════════════════════════ */
+const BACKEND_URL = 'https://netlearn-backend.onrender.com';
+let playerName = localStorage.getItem('nl-player-name') || '';
+let _socket = null;
+
+function syncPlayerName(name) {
+  const n = (name || '').trim().slice(0, 20);
+  if (!n) return;
+  playerName = n;
+  localStorage.setItem('nl-player-name', n);
+}
+
+function saveQuizName() {
+  const n = ($('q-player-name') ? $('q-player-name').value : '').trim();
+  if (n) syncPlayerName(n);
+}
+
+async function postScore(game, score, correct, total) {
+  if (!BACKEND_URL || !playerName) return false;
+  try {
+    const res = await fetch(BACKEND_URL + '/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: playerName, game, score: Math.max(0, score||0), correct: Math.max(0, correct||0), total: Math.max(0, total||0) })
+    });
+    return res.ok;
+  } catch(e) { console.warn('[NetLearn] Score post failed:', e.message); return false; }
+}
+
+async function fetchGlobalLeaderboard(game) {
+  if (!BACKEND_URL) return null;
+  try {
+    const res = await fetch(BACKEND_URL + '/api/leaderboard/' + game);
+    return res.ok ? await res.json() : null;
+  } catch(e) { return null; }
+}
+
+function initBackend() {
+  if (!BACKEND_URL) return;
+  try {
+    _socket = io(BACKEND_URL, { reconnectionAttempts: 5, timeout: 10000 });
+    _socket.on('connect', () => console.log('[NetLearn] Connected to backend'));
+    _socket.on('leaderboard_update', ({ game, entries }) => {
+      if (game === 'time_attack') renderLeaderboard(entries);
+    });
+    _socket.on('connect_error', () => console.warn('[NetLearn] Backend offline — session mode active'));
+  } catch(e) { console.warn('[NetLearn] Socket init failed:', e); }
+  /* Fetch initial Time Attack leaderboard */
+  fetchGlobalLeaderboard('time_attack').then(d => { if (d) renderLeaderboard(d); });
+}
 
 /* ══ CORE NETWORKING MATH ══════════════════════════════════════ */
 function ip2int(p)    { return ((p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3])>>>0; }
@@ -854,6 +927,12 @@ const setTxt=(id,t)=>$(id).textContent=t;
 function nav(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $(id).classList.add('active');
+  /* Pre-fill name inputs with stored player name */
+  if (playerName) {
+    if (id==='s-attack' && $('ta-name'))       $('ta-name').value        = playerName;
+    if (id==='s-quiz'   && $('q-player-name')) $('q-player-name').value  = playerName;
+    if (id==='s-class'  && $('cls-player-name')) $('cls-player-name').value = playerName;
+  }
 }
 
 /* Render bitwise AND visualization */
@@ -1002,6 +1081,9 @@ function quizSubmit() {
   $('q-reveal').className='q-reveal show';
   $('q-sub-btn').style.display='none';
   $('q-nxt-btn').style.display='';
+  /* Post cumulative quiz score to backend */
+  saveQuizName();
+  postScore('quiz', quizS.qCorr * 10, quizS.qCorr, quizS.challenges);
 }
 
 function normalIP(s) {
@@ -1026,6 +1108,8 @@ function getSpeedPct(s) {
 }
 
 function classStart() {
+  const clsName = ($('cls-player-name') ? $('cls-player-name').value : '').trim();
+  if (clsName) syncPlayerName(clsName);
   $('cls-start-area').style.display='none';
   $('cls-game-area').style.display='flex';
   classNextIP();
@@ -1110,6 +1194,10 @@ function classTimeout() {
 
 function classStop() {
   if(classS.timerId){ clearTimeout(classS.timerId); classS.timerId=null; }
+  /* Post session stats before reset (only if player answered at least one question) */
+  if (classS.tt > 0) {
+    postScore('ip_class', classS.best, classS.tc, classS.tt);
+  }
   classS.streak=0; classS.best=0; classS.tc=0; classS.tw=0; classS.tt=0;
   setTxt('cls-streak',0); setTxt('cls-best',0);
   setTxt('cls-tc',0); setTxt('cls-tw',0); setTxt('cls-tt',0);
@@ -1131,6 +1219,7 @@ function attackStart() {
   const name=($('ta-name').value||'').trim();
   if(!name){ $('ta-name').focus(); $('ta-name').style.borderColor='var(--er)'; return; }
   $('ta-name').style.borderColor='';
+  syncPlayerName(name); /* save to localStorage + global playerName */
   attackS.player=name; attackS.score=0; attackS.correct=0; attackS.asked=0;
   attackS.timeLeft=60; attackS.active=true;
 
@@ -1170,7 +1259,11 @@ function attackEnd() {
   setTxt('lb-your-pts',attackS.score);
   $('ta-game').classList.remove('on');
   $('ta-lb').classList.add('on');
-  renderLeaderboard();
+  renderLeaderboard(); /* Show local data immediately */
+  /* Post to backend — socket will broadcast updated global leaderboard */
+  postScore('time_attack', attackS.score, attackS.correct, attackS.asked).then(ok => {
+    if (ok) setTimeout(() => fetchGlobalLeaderboard('time_attack').then(d => { if(d) renderLeaderboard(d); }), 1200);
+  });
 }
 
 function attackStop() {
@@ -1301,15 +1394,21 @@ function wrongHosts(correct, count) {
   return [...results].slice(0,count+1).sort(()=>Math.random()-.5);
 }
 
-function renderLeaderboard() {
-  $('lb-list').innerHTML=leaderboard.map((e,i)=>{
-    const isNew=e.name===attackS.player&&e.ts===Math.max(...leaderboard.map(x=>x.ts));
-    const medals=['🥇','🥈','🥉'];
-    const rankStr=i<3?medals[i]:String(i+1);
+function renderLeaderboard(backendData) {
+  const raw     = backendData || leaderboard;
+  const entries = raw.slice(0, 10);
+  /* Update subtitle based on data source */
+  if ($('lb-sub2')) $('lb-sub2').textContent = backendData ? 'Global scores — all time' : 'Session scores — top 10';
+  const medals=['🥇','🥈','🥉'];
+  $('lb-list').innerHTML=entries.map((e,i)=>{
+    const name    = e.name || e.player_name;
+    const correct = e.correct || 0;
+    const isNew   = name === attackS.player;
+    const rankStr = i<3 ? medals[i] : String(i+1);
     return`<div class="lb-entry">
       <div class="lb-rank">${rankStr}</div>
-      <div class="lb-nm">${e.name} ${isNew?'<span class="lb-new">NEW</span>':''}</div>
-      <div class="lb-corr">${e.correct} correct</div>
+      <div class="lb-nm">${name} ${isNew?'<span class="lb-new">NEW</span>':''}</div>
+      <div class="lb-corr">${correct} correct</div>
       <div class="lb-sc">${e.score}</div>
     </div>`;
   }).join('');
@@ -1317,6 +1416,16 @@ function renderLeaderboard() {
 
 /* ══ ENTER KEY SHORTCUTS ════════════════════════════════════════ */
 $('ta-name').addEventListener('keydown',e=>{ if(e.key==='Enter')attackStart(); });
+
+/* Initialise backend connection after all scripts load */
+window.addEventListener('load', initBackend);
+
+/* Pre-fill name inputs if player name is already stored */
+if (playerName) {
+  if ($('ta-name'))         $('ta-name').value         = playerName;
+  if ($('q-player-name'))   $('q-player-name').value   = playerName;
+  if ($('cls-player-name')) $('cls-player-name').value = playerName;
+}
 </script>
 </body>
 </html>
