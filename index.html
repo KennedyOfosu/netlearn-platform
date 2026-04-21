@@ -1057,7 +1057,10 @@ function initBackend() {
   if (!BACKEND_URL) return;
   try {
     _socket = io(BACKEND_URL, { reconnectionAttempts: 5, timeout: 10000 });
-    _socket.on('connect', () => console.log('[NetLearn] Connected to backend'));
+    _socket.on('connect', () => {
+      console.log('[NetLearn] Connected to backend');
+      _socket.emit('player_join'); /* Tell server this is an active player */
+    });
     _socket.on('leaderboard_update', ({ game, entries }) => {
       if (game === 'time_attack') renderLeaderboard(entries);
     });
