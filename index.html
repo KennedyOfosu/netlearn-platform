@@ -412,24 +412,124 @@
     [data-theme="light"] .theme-toggle .icon-sun  { display:none; }
     [data-theme="light"] .theme-toggle .icon-moon { display:block; }
 
-    /* ── RESPONSIVE ─────────────────────────────────────────────── */
+    /* ══ RESPONSIVE ═══════════════════════════════════════════════ */
+
+    /* Tablet (≤960px) */
     @media (max-width:960px) {
-      .h-grid { grid-template-columns:1fr 1fr; }
-      .h-nav  { padding:18px 24px; }
+      .h-grid    { grid-template-columns:1fr 1fr; }
+      .h-nav     { padding:18px 28px; }
       .h-nav-sub { display:none; }
+      .calc-wrap { padding:28px 28px; }
     }
+
+    /* Large phone / small tablet (≤700px) */
     @media (max-width:700px) {
-      .h-grid { grid-template-columns:1fr; }
-      .calc-wrap { grid-template-columns:1fr; padding:20px 16px; }
-      .cls-addr { font-size:36px; }
-      .cls-card { padding:32px 22px; }
-      .ta-hud   { padding:12px 18px; }
-      .anav     { padding:14px 18px; }
-      .h-hero   { padding:32px 18px 56px; }
-      .qr-grid  { grid-template-columns:1fr; }
-      .ta-opts  { grid-template-columns:1fr; }
+      /* home */
+      .h-nav   { padding:14px 18px; }
+      .h-hero  { padding:28px 18px 48px; }
+      .h-ttl   { font-size:clamp(28px,8vw,44px); margin-bottom:14px; }
+      .h-sub   { font-size:14px; margin-bottom:36px; }
+      .h-grid  { grid-template-columns:1fr; gap:10px; }
+      .hc      { padding:22px 18px 18px; }
+
+      /* nav / shared */
+      .anav       { padding:12px 16px; }
+      .nav-ttl    { font-size:13px; }
+
+      /* calculator */
+      .calc-wrap  { grid-template-columns:1fr; padding:18px 14px; gap:14px; }
+      .bits-box   { overflow-x:auto; }
+
+      /* quiz */
+      .quiz-wrap  { padding:20px 14px; }
+      .qip-addr   { font-size:24px; }
+      .q-act      { flex-direction:column; }
+      .qr-grid    { grid-template-columns:1fr; }
+      .diff-row   { gap:4px; }
+      .dtab       { font-size:12px; padding:9px 4px; }
+
+      /* ip class */
+      .cls-card   { padding:28px 18px; }
+      .cls-addr   { font-size:32px; }
       .cls-ans-btns { gap:8px; }
-      .cabt { width:54px; height:54px; font-size:18px; }
+      .cabt       { width:56px; height:56px; font-size:19px; border-radius:14px; }
+      .streak-area{ gap:12px; }
+      .streak-num { font-size:44px; }
+      .cls-totals { gap:12px; font-size:12px; }
+
+      /* time attack */
+      .ta-sc         { padding:30px 20px; }
+      .ta-hud        { padding:10px 16px; gap:10px; }
+      .ta-qcard      { padding:22px 16px; }
+      .ta-qip        { font-size:21px; }
+      .ta-opts       { grid-template-columns:1fr; gap:7px; }
+      .ta-opt        { padding:13px 10px; }
+
+      /* leaderboard */
+      .lb-ttl   { font-size:28px; }
+      .lb-you   { flex-direction:column; text-align:center; gap:10px; padding:18px 18px; }
+      .lb-you-right { text-align:center; }
+      .lb-you-pts   { font-size:38px; }
+      .lb-list      { padding:0 14px 48px; }
+      .lb-btns      { flex-direction:column; align-items:stretch; padding:0 14px 48px; gap:10px; }
+      .lb-btns .btn { width:100%; }
+    }
+
+    /* Phone (≤480px) */
+    @media (max-width:480px) {
+      /* home */
+      .h-logo   { font-size:14px; }
+      .h-ey     { font-size:10px; margin-bottom:12px; }
+      .h-ttl    { font-size:clamp(26px,9vw,38px); }
+      .h-sub    { font-size:13px; }
+      .hc-name  { font-size:15px; }
+      .hc-desc  { font-size:12px; }
+
+      /* shared buttons — bigger touch targets */
+      .btn   { padding:14px 20px; }
+      .btn-w { padding:14px; }
+
+      /* quiz */
+      .qip-addr   { font-size:20px; }
+      .qip-mask   { font-size:12px; }
+      .qsc-v      { font-size:22px; }
+      .cbtn       { font-size:13px; padding:10px 4px; }
+
+      /* ip class */
+      .cls-addr   { font-size:26px; }
+      .cabt       { width:52px; height:52px; font-size:17px; }
+      .streak-num { font-size:38px; }
+      .cls-start-area h2 { font-size:21px; }
+      .cls-start-area p  { font-size:13px; }
+
+      /* time attack */
+      .ta-sc-ttl  { font-size:19px; }
+      .ta-sc-sub  { font-size:13px; }
+      .ta-sc      { padding:26px 16px; }
+      .ta-tnum    { font-size:24px; }
+      .ta-chip .v { font-size:18px; }
+      .ta-chips   { gap:14px; }
+      .ta-hud     { flex-wrap:wrap; }
+      .ta-chips   { margin-left:0; width:100%; justify-content:space-around; border-top:1px solid var(--br); padding-top:8px; }
+      .ta-qip     { font-size:18px; }
+      .ta-pts-badge { font-size:10px; padding:3px 10px; }
+
+      /* leaderboard */
+      .lb-nm  { font-size:14px; }
+      .lb-sc  { font-size:15px; }
+
+      /* iOS: prevent auto-zoom on input focus (inputs must be ≥16px) */
+      .q-inp, .inp, .q-inp, .pnr-inp { font-size:16px !important; }
+    }
+
+    /* Very small phone (≤380px) */
+    @media (max-width:380px) {
+      .cls-addr { font-size:22px; }
+      .ta-qip   { font-size:16px; }
+      .cabt     { width:46px; height:46px; font-size:15px; border-radius:12px; }
+      .ta-opt   { font-size:12px; }
+      .h-ttl    { font-size:26px; }
+      .anav     { gap:8px; }
     }
 
     /* ── PLAYER NAME ROW ─────────────────────────────────────────── */
