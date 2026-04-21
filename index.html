@@ -539,6 +539,31 @@
     .pnr-inp::placeholder { color:var(--txd); }
     .pnr-btn { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px; background:var(--od); color:var(--o); border:1px solid rgba(255,78,13,.25); cursor:pointer; font-size:13px; flex-shrink:0; transition:all .15s; }
     .pnr-btn:hover { background:var(--o); color:#fff; }
+
+    /* ── QUESTION COUNT PICKER ───────────────────────────────────── */
+    .q-count-row { display:flex;align-items:center;gap:6px;margin-bottom:16px; }
+    .q-count-lbl { font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--txm);flex-shrink:0;min-width:72px; }
+    .qcnt-btn { flex:1;padding:9px 0;border-radius:8px;border:1px solid var(--br);background:var(--s2);color:var(--txm);font-family:var(--ui);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s; }
+    .qcnt-btn:hover { color:var(--o);border-color:rgba(255,78,13,.4); }
+    .qcnt-btn.on   { background:var(--od);border-color:rgba(255,78,13,.4);color:var(--o); }
+
+    /* ── QUESTION PROGRESS ────────────────────────────────────────── */
+    .q-prog-row   { display:flex;align-items:center;gap:10px;margin-bottom:14px; }
+    .q-prog-track { flex:1;height:4px;background:var(--s3);border-radius:50px;overflow:hidden; }
+    .q-prog-fill  { height:100%;border-radius:50px;transition:width .3s ease; }
+    .q-prog-lbl   { font-size:11px;font-weight:700;color:var(--txm);flex-shrink:0;font-family:var(--mono);white-space:nowrap; }
+
+    /* ── GAME COMPLETION CARD ───────────────────────────────────────── */
+    .game-complete { background:var(--s1);border:1px solid var(--br);border-radius:20px;padding:36px 28px;text-align:center;margin-bottom:18px;animation:fadeUp .32s ease both;display:none; }
+    .game-complete.show { display:block; }
+    .gc-icon  { font-size:42px;margin-bottom:12px; }
+    .gc-title { font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px; }
+    .gc-sub   { font-size:13px;color:var(--txm);margin-bottom:24px;line-height:1.6; }
+    .gc-stats { display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px; }
+    .gc-stat  { background:var(--s2);border:1px solid var(--br);border-radius:13px;padding:14px 10px; }
+    .gc-sv    { font-size:28px;font-weight:900;line-height:1;margin-bottom:4px; }
+    .gc-sl    { font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--txm); }
+    .gc-btns  { display:flex;gap:10px;justify-content:center;flex-wrap:wrap; }
   </style>
 </head>
 <body>
@@ -701,6 +726,22 @@
       <button class="dtab" onclick="quizSetDiff('advanced',this)">🟣 Advanced</button>
     </div>
 
+    <!-- Question count picker -->
+    <div class="q-count-row" id="q-count-row">
+      <span class="q-count-lbl">Questions:</span>
+      <button class="qcnt-btn on" onclick="setQuizLimit(10,this)">10</button>
+      <button class="qcnt-btn" onclick="setQuizLimit(15,this)">15</button>
+      <button class="qcnt-btn" onclick="setQuizLimit(20,this)">20</button>
+      <button class="qcnt-btn" onclick="setQuizLimit(30,this)">30</button>
+      <button class="qcnt-btn" onclick="setQuizLimit(0,this)">∞</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="q-prog-row" id="q-prog-row" style="display:none">
+      <div class="q-prog-track"><div class="q-prog-fill" id="q-prog-fill" style="background:var(--b);width:0%"></div></div>
+      <span class="q-prog-lbl" id="q-prog-lbl">Q 0 / 10</span>
+    </div>
+
     <div class="qscore-row">
       <div class="qsc ok"><div class="qsc-v" id="q-corr">0</div><div class="qsc-l">Correct Qs</div></div>
       <div class="qsc bad"><div class="qsc-v" id="q-wrong">0</div><div class="qsc-l">Wrong Qs</div></div>
@@ -754,6 +795,22 @@
       <div class="wc-box" id="q-wc"></div>
       <div class="bits-box" id="q-bits"></div>
     </div>
+
+    <!-- Quiz completion card -->
+    <div class="game-complete" id="q-complete">
+      <div class="gc-icon">🎓</div>
+      <div class="gc-title">Quiz Complete!</div>
+      <div class="gc-sub" id="q-gc-sub">Here’s how you did</div>
+      <div class="gc-stats">
+        <div class="gc-stat"><div class="gc-sv" style="color:var(--ok)" id="q-gc-corr">0</div><div class="gc-sl">Correct</div></div>
+        <div class="gc-stat"><div class="gc-sv" style="color:var(--er)" id="q-gc-wrong">0</div><div class="gc-sl">Wrong</div></div>
+        <div class="gc-stat"><div class="gc-sv" style="color:var(--b)" id="q-gc-score">0</div><div class="gc-sl">Score</div></div>
+      </div>
+      <div class="gc-btns">
+        <button class="btn btn-b" onclick="quizRestart()">↩ Play Again</button>
+        <button class="btn btn-ghost" onclick="nav('s-home')">⌂ Home</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -795,11 +852,25 @@
         <label class="lbl" for="cls-player-name">Your Name (for leaderboard)</label>
         <input class="inp" id="cls-player-name" type="text" placeholder="Enter your name…" maxlength="20" onkeydown="if(event.key==='Enter')classStart()"/>
       </div>
+      <!-- Question count selector -->
+      <div class="q-count-row" style="width:100%;max-width:320px;" id="cls-count-row">
+        <span class="q-count-lbl">Questions:</span>
+        <button class="qcnt-btn on" onclick="setClsLimit(10,this)">10</button>
+        <button class="qcnt-btn" onclick="setClsLimit(15,this)">15</button>
+        <button class="qcnt-btn" onclick="setClsLimit(20,this)">20</button>
+        <button class="qcnt-btn" onclick="setClsLimit(30,this)">30</button>
+        <button class="qcnt-btn" onclick="setClsLimit(0,this)">∞</button>
+      </div>
       <button class="btn btn-g" onclick="classStart()">▶ Start Game</button>
     </div>
 
     <!-- Game area -->
     <div class="cls-game-area" id="cls-game-area">
+      <!-- Progress bar (shown only when limit > 0) -->
+      <div class="q-prog-row" id="cls-prog-row" style="width:100%;max-width:400px;display:none">
+        <div class="q-prog-track"><div class="q-prog-fill" id="cls-prog-fill" style="background:var(--g);width:0%"></div></div>
+        <span class="q-prog-lbl" id="cls-prog-lbl">Q 0 / 10</span>
+      </div>
       <div class="cls-card">
         <div class="cls-ey">Identify the IP Class</div>
         <div class="cls-addr" id="cls-ip">─── . ─── . ─── . ───</div>
@@ -819,6 +890,22 @@
         Correct: <strong id="cls-tc">0</strong>
         &nbsp;Incorrect: <strong id="cls-tw">0</strong>
         &nbsp;Total: <strong id="cls-tt">0</strong>
+      </div>
+    </div>
+
+    <!-- IP Class completion card -->
+    <div class="game-complete" id="cls-complete">
+      <div class="gc-icon">⚡</div>
+      <div class="gc-title">Round Complete!</div>
+      <div class="gc-sub" id="cls-gc-sub"></div>
+      <div class="gc-stats">
+        <div class="gc-stat"><div class="gc-sv" style="color:var(--g)" id="cls-gc-streak">0</div><div class="gc-sl">Best Streak</div></div>
+        <div class="gc-stat"><div class="gc-sv" style="color:var(--ok)" id="cls-gc-corr">0</div><div class="gc-sl">Correct</div></div>
+        <div class="gc-stat"><div class="gc-sv" style="color:var(--er)" id="cls-gc-wrong">0</div><div class="gc-sl">Wrong</div></div>
+      </div>
+      <div class="gc-btns">
+        <button class="btn btn-g" onclick="classRestart()">↩ Play Again</button>
+        <button class="btn btn-ghost" onclick="classStop();nav('s-home')">⌂ Home</button>
       </div>
     </div>
   </div>
@@ -846,8 +933,17 @@
         </svg>
       </div>
       <h2 class="ta-sc-ttl">Time Attack</h2>
-      <p class="ta-sc-sub">Answer as many networking questions as possible in 60 seconds. Harder subnets earn more points. Compete for the leaderboard!</p>
+      <p class="ta-sc-sub">Answer as many networking questions as possible in 60 seconds — or choose a set number of rounds!</p>
       <input class="ta-name-inp" id="ta-name" type="text" placeholder="Enter your name…" maxlength="20"/>
+      <!-- Mode picker: timer or question count -->
+      <div class="q-count-row" style="width:100%;margin-bottom:4px;" id="ta-count-row">
+        <span class="q-count-lbl">Mode:</span>
+        <button class="qcnt-btn on" onclick="setTALimit(0,this)">⏱ 60s</button>
+        <button class="qcnt-btn" onclick="setTALimit(10,this)">10 Qs</button>
+        <button class="qcnt-btn" onclick="setTALimit(15,this)">15 Qs</button>
+        <button class="qcnt-btn" onclick="setTALimit(20,this)">20 Qs</button>
+        <button class="qcnt-btn" onclick="setTALimit(30,this)">30 Qs</button>
+      </div>
       <button class="btn btn-v btn-w" onclick="attackStart()">⚡ Start Time Attack</button>
     </div>
   </div>
@@ -869,6 +965,7 @@
         <div class="ta-chip"><div class="v" id="ta-score">0</div><div class="l">Points</div></div>
         <div class="ta-chip"><div class="v" id="ta-ck">0</div><div class="l">Correct</div></div>
         <div class="ta-chip"><div class="v" id="ta-asked">0</div><div class="l">Asked</div></div>
+        <div class="ta-chip" id="ta-limit-chip" style="display:none"><div class="v" id="ta-qleft">—</div><div class="l">Left</div></div>
       </div>
     </div>
     <div class="ta-main">
@@ -1093,7 +1190,8 @@ function calcReset() {
 const quizS = {
   diff:'beginner', ip:null, mask:null, pfx:0, result:null,
   selClass:null, submitted:false,
-  qCorr:0, qWrong:0, challenges:0
+  qCorr:0, qWrong:0, challenges:0,
+  limit:10   /* 0 = unlimited */
 };
 
 function quizSetDiff(d,btn) {
@@ -1110,6 +1208,9 @@ function quizPickClass(c,btn) {
 }
 
 function quizGenerate() {
+  /* If limit reached, show completion instead of next question */
+  if(quizS.limit>0 && quizS.challenges>=quizS.limit){ quizComplete(); return; }
+
   const ch=randChallenge(quizS.diff);
   quizS.ip=ch.ip; quizS.mask=ch.mask; quizS.pfx=ch.pfx;
   quizS.result=calcSubnet(ch.ip,ch.mask);
@@ -1122,8 +1223,12 @@ function quizGenerate() {
   ['q-net','q-bc','q-hosts'].forEach(id=>{const e=$(id);e.value='';e.className='q-inp';e.disabled=false;});
   ['q-net-hint','q-bc-hint','q-hosts-hint'].forEach(id=>{const e=$(id);e.className='q-hint';e.textContent='';});
   $('q-reveal').className='q-reveal';
+  $('q-complete').classList.remove('show');
   $('q-sub-btn').style.display='';
   $('q-nxt-btn').style.display='none';
+  $('q-nxt-btn').textContent='Next Challenge →';
+  $('q-nxt-btn').onclick=quizGenerate;
+  updateQuizProg();
 }
 
 function quizSubmit() {
@@ -1166,6 +1271,7 @@ function quizSubmit() {
 
   quizS.qCorr+=nc; quizS.qWrong+=nw; quizS.challenges++;
   setTxt('q-corr',quizS.qCorr); setTxt('q-wrong',quizS.qWrong); setTxt('q-chal',quizS.challenges);
+  updateQuizProg();
 
   // Build reveal
   $('q-rv-grid').innerHTML=`
@@ -1176,10 +1282,20 @@ function quizSubmit() {
     <div class="qr-item"><div class="qr-k">Usable Hosts</div><div class="qr-v bc">${r.hosts.toLocaleString()}</div></div>
     <div class="qr-item"><div class="qr-k">IP Class</div><div class="qr-v bc">Class ${r.cls} — ${classRange(r.cls)}</div></div>
   `;
-  $('q-wc').innerHTML=`<strong>Wildcard Mask: ${r.wild}</strong> — The wildcard mask is the bitwise inverse of the subnet mask. It identifies the <em>host portion</em> of an address. A <strong>1</strong> bit means "don't care" (any value is allowed); a <strong>0</strong> bit means "must match exactly." Wildcard masks are widely used in routing ACLs to match address ranges.`;
+  $('q-wc').innerHTML=`<strong>Wildcard Mask: ${r.wild}</strong> — The wildcard mask is the bitwise inverse of the subnet mask. It identifies the <em>host portion</em> of an address. A <strong>1</strong> bit means "don't care"; a <strong>0</strong> bit means "must match exactly." Wildcard masks are widely used in routing ACLs to match address ranges.`;
   renderBits('q-bits',quizS.ip,quizS.mask,r.netP);
   $('q-reveal').className='q-reveal show';
   $('q-sub-btn').style.display='none';
+
+  /* Check if last question */
+  const atLimit = quizS.limit>0 && quizS.challenges>=quizS.limit;
+  if(atLimit){
+    $('q-nxt-btn').textContent='📊 See Results';
+    $('q-nxt-btn').onclick=quizComplete;
+  } else {
+    $('q-nxt-btn').textContent='Next Challenge →';
+    $('q-nxt-btn').onclick=quizGenerate;
+  }
   $('q-nxt-btn').style.display='';
   /* Post cumulative quiz score to backend */
   saveQuizName();
@@ -1192,7 +1308,7 @@ function normalIP(s) {
 }
 
 /* ══ IP CLASS IDENTIFIER ════════════════════════════════════════ */
-const classS = { streak:0, best:0, tc:0, tw:0, tt:0, curIP:null, curCls:null, timerId:null, answered:false };
+const classS = { streak:0, best:0, tc:0, tw:0, tt:0, curIP:null, curCls:null, timerId:null, answered:false, limit:10 };
 
 function classInit() {
   // Reset UI to start screen every time we enter the mode
@@ -1273,8 +1389,10 @@ function classAnswer(cls, btn) {
   classS.tt++;
   setTxt('cls-streak',classS.streak);
   setTxt('cls-tc',classS.tc); setTxt('cls-tw',classS.tw); setTxt('cls-tt',classS.tt);
+  updateClsProg();
 
-  setTimeout(classNextIP, 1400);
+  if(classS.limit>0 && classS.tt>=classS.limit) setTimeout(classComplete, 800);
+  else setTimeout(classNextIP, 1400);
 }
 
 function classTimeout() {
@@ -1289,7 +1407,10 @@ function classTimeout() {
   fb.className='fb-pill bad show';
   fb.textContent=`⏱ Time's up! Answer: Class ${classS.curCls} — ${classRange(classS.curCls)}`;
   setTxt('cls-streak',0); setTxt('cls-tw',classS.tw); setTxt('cls-tt',classS.tt);
-  setTimeout(classNextIP,1600);
+  updateClsProg();
+
+  if(classS.limit>0 && classS.tt>=classS.limit) setTimeout(classComplete, 900);
+  else setTimeout(classNextIP,1600);
 }
 
 function classStop() {
@@ -1304,7 +1425,7 @@ function classStop() {
 }
 
 /* ══ TIME ATTACK ════════════════════════════════════════════════ */
-const attackS = { player:'', score:0, correct:0, asked:0, timeLeft:60, timerId:null, active:false, curQ:null };
+const attackS = { player:'', score:0, correct:0, asked:0, timeLeft:60, timerId:null, active:false, curQ:null, limit:0 };
 const leaderboard = [];
 const CIRCUMFERENCE = 2*Math.PI*22; // r=22, C≈138.23
 
@@ -1319,7 +1440,7 @@ function attackStart() {
   const name=($('ta-name').value||'').trim();
   if(!name){ $('ta-name').focus(); $('ta-name').style.borderColor='var(--er)'; return; }
   $('ta-name').style.borderColor='';
-  syncPlayerName(name); /* save to localStorage + global playerName */
+  syncPlayerName(name);
   attackS.player=name; attackS.score=0; attackS.correct=0; attackS.asked=0;
   attackS.timeLeft=60; attackS.active=true;
 
@@ -1328,6 +1449,10 @@ function attackStart() {
   $('ta-ring').classList.remove('danger');
   $('ta-ring-fill').style.strokeDashoffset=0;
   $('ta-timer').classList.remove('danger');
+
+  /* Show/hide Q-left chip */
+  const lc=$('ta-limit-chip'); if(lc) lc.style.display=attackS.limit>0?'':'none';
+  if(attackS.limit>0) setTxt('ta-qleft',attackS.limit);
 
   $('ta-setup').style.display='none';
   $('ta-lb').classList.remove('on');
@@ -1373,6 +1498,8 @@ function attackStop() {
 /* Question types: 0=class, 1=network, 2=broadcast, 3=hosts, 4=wildcard */
 function attackNextQ() {
   if(!attackS.active) return;
+  /* Question-count mode: end when limit reached */
+  if(attackS.limit>0 && attackS.asked>=attackS.limit){ attackEnd(); return; }
   const type=rnd(0,4);
   let diff, pfx, pts;
 
@@ -1419,6 +1546,11 @@ function attackNextQ() {
   attackS.curQ={correct,pts};
   attackS.asked++;
   setTxt('ta-asked',attackS.asked);
+  /* Update Q-left chip */
+  if(attackS.limit>0){
+    const left=Math.max(0,attackS.limit-attackS.asked);
+    setTxt('ta-qleft',left);
+  }
   setTxt('ta-qtext',qtext);
   setTxt('ta-qip',qip);
 
@@ -1512,6 +1644,88 @@ function renderLeaderboard(backendData) {
       <div class="lb-sc">${e.score}</div>
     </div>`;
   }).join('');
+}
+
+/* ══ QUESTION COUNT HELPERS ═════════════════════════════════════ */
+function setQuizLimit(n, btn) {
+  quizS.limit=n;
+  document.querySelectorAll('#q-count-row .qcnt-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  /* Show/hide progress bar and reset */
+  $('q-prog-row').style.display = n>0?'':'none';
+  updateQuizProg();
+}
+function updateQuizProg() {
+  if(!quizS.limit) return;
+  const done=quizS.challenges, tot=quizS.limit;
+  const pct=Math.min(100,Math.round(done/tot*100));
+  $('q-prog-fill').style.width=pct+'%';
+  $('q-prog-lbl').textContent=`Q ${done} / ${tot}`;
+}
+function quizComplete() {
+  $('q-panel').style.display='none';
+  $('q-gen-btn').style.display='none';
+  $('q-act').style.display='none';
+  $('q-reveal').className='q-reveal';
+  const pct=Math.round(quizS.qCorr/(quizS.challenges||1)*100);
+  const grade=pct>=80?'Excellent! 🌟':pct>=60?'Good work! 👍':'Keep practising! 💪';
+  $('q-gc-sub').textContent = `${pct}% accuracy — ${grade}`;
+  $('q-gc-corr').textContent = quizS.qCorr;
+  $('q-gc-wrong').textContent = quizS.qWrong;
+  $('q-gc-score').textContent = quizS.qCorr*10;
+  $('q-complete').classList.add('show');
+}
+function quizRestart() {
+  quizS.qCorr=0; quizS.qWrong=0; quizS.challenges=0; quizS.submitted=false;
+  setTxt('q-corr',0); setTxt('q-wrong',0); setTxt('q-chal',0);
+  $('q-complete').classList.remove('show');
+  $('q-panel').style.display='';
+  $('q-gen-btn').style.display='';
+  $('q-act').style.display='';
+  $('q-prog-fill').style.width='0%';
+  $('q-prog-lbl').textContent='Q 0 / '+quizS.limit;
+  quizGenerate();
+}
+
+function setClsLimit(n, btn) {
+  classS.limit=n;
+  document.querySelectorAll('#cls-count-row .qcnt-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  $('cls-prog-row').style.display = n>0?'':'none';
+}
+function updateClsProg() {
+  if(!classS.limit) return;
+  const pct=Math.min(100,Math.round(classS.tt/classS.limit*100));
+  $('cls-prog-fill').style.width=pct+'%';
+  $('cls-prog-lbl').textContent=`Q ${classS.tt} / ${classS.limit}`;
+}
+function classComplete() {
+  if(classS.timerId){ clearTimeout(classS.timerId); classS.timerId=null; }
+  postScore('ip_class', classS.best, classS.tc, classS.tt);
+  $('cls-game-area').style.display='none';
+  const pct=Math.round(classS.tc/(classS.tt||1)*100);
+  $('cls-gc-sub').textContent=`Best streak: ${classS.best}  ·  ${pct}% accuracy`;
+  $('cls-gc-streak').textContent=classS.best;
+  $('cls-gc-corr').textContent=classS.tc;
+  $('cls-gc-wrong').textContent=classS.tw;
+  $('cls-complete').classList.add('show');
+}
+function classRestart() {
+  $('cls-complete').classList.remove('show');
+  classStop();
+  $('cls-game-area').style.display='';
+  $('cls-prog-fill').style.width='0%';
+  $('cls-prog-lbl').textContent='Q 0 / '+classS.limit;
+  classStart();
+}
+
+function setTALimit(n, btn) {
+  attackS.limit=n;
+  document.querySelectorAll('#ta-count-row .qcnt-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  /* Update nav pill label */
+  const pill=document.querySelector('#s-attack .pill-v');
+  if(pill) pill.textContent=n>0?n+' Questions':'60 Seconds';
 }
 
 /* ══ ENTER KEY SHORTCUTS ════════════════════════════════════════ */
